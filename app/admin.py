@@ -1,6 +1,7 @@
+from datetime import datetime
 from functools import wraps
 
-from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+from flask import Blueprint, abort, flash, Response, redirect, render_template, request, stream_with_context, url_for
 from flask_login import current_user, login_required
 
 from . import db
@@ -56,6 +57,47 @@ def dashboard():
     total_users = User.query.filter_by(is_approved=True, is_blacklisted=False).count()
     return render_template("admin/dashboard.html", pending_users=pending_users, total_users=total_users, active_page="Dashboard", search_query=search_query)
 
+@admin_bp.route('/users/export')
+@admin_required
+def export_users():
+    # Filter for filtered CSV
+    role_filter = request.args.get("role_filter", '')
+
+    query = User.query
+
+    if role_filter:
+        query = query.filter(User.role==role_filter)
+
+    import csv
+    from io import StringIO
+
+    def generate():
+        data = StringIO()
+        writer = csv.writer(data)
+
+        writer.writerow(['ID', 'USERNAME', 'EMAIL', 'ROLE', 'STATUS'])
+        yield data.getvalue()
+        data.seek(0)
+        data.truncate(0)
+
+        for user in query:
+            writer.writerow([
+                user.id,
+                user.username,
+                user.email,
+                user.role,
+                "Approved" if user.is_approved else "Pending"
+            ])
+
+            yield data.getvalue()
+            data.seek(0)
+            data.truncate(0)
+        
+    return Response(
+        stream_with_context(generate()),
+        mimetype='text/csv',
+        headers={"Content-Disposition":"attachment;filename=users_export.csv"}
+    )
 
 @admin_bp.route("/approve/<int:user_id>", methods=["POST"])
 @admin_required
@@ -66,7 +108,7 @@ def approve_user(user_id):
     user.is_approved = True
     db.session.commit()
     notify_admin(f"User '{user.username}' has been approved.", "success")
-    return redirect(url_for("admin.dashboard"))
+    return redirect(url_for("admin.manage_users"))
 
 
 @admin_bp.route("/reject/<int:user_id>", methods=["POST"])
@@ -78,14 +120,44 @@ def reject_user(user_id):
     db.session.delete(user)
     db.session.commit()
     notify_admin(f"User '{user.username}' registration has been rejected.", "success")
-    return redirect(url_for("admin.dashboard"))
+    return redirect(url_for("admin.manage_users"))
 
 
 @admin_bp.route("/users")
 @admin_required
 def manage_users():
-    users = User.query.filter(User.id != current_user.id).order_by(User.created_at.desc()).all()
-    return render_template("admin/manage_users.html", users=users, active_page="Manage Users")
+    # User counts for total users, pending, blacklisted and new_users
+    total_users = User.query.filter_by(is_approved=True).count()
+    pending_count = User.query.filter_by(is_approved=False).count()
+    blacklisted_count = User.query.filter_by(is_blacklisted=True).count()
+    
+    first_of_month = datetime.utcnow().replace(day=1,hour=0,minute=0,second=0, microsecond=0)
+    new_users_count = User.query.filter(User.created_at >= first_of_month).count()
+    
+    # Parameters for filters and page number
+    role_filter = request.args.get(key='role_filter', default='', type=str)
+    per_page = request.args.get(key="per_page", default=10, type=int)
+    page = request.args.get(key="page", default=1, type=int)
+
+    query = User.query.filter(User.id != current_user.id)
+
+    if role_filter:
+        query = query.filter(User.role == role_filter)
+    
+    # Only shows approved users for the current page the user is on
+    pagination = query.order_by(User.created_at.asc()).paginate(page=page, per_page=per_page,error_out=False)
+
+    # users = User.query.filter(User.id != current_user.id).order_by(User.created_at.desc()).all()
+    return render_template(
+        "admin/manage_users.html",
+        users=pagination.items,
+        user_pagination=pagination,
+        total_users=total_users,
+        pending_count=pending_count,
+        blacklisted_count=blacklisted_count,
+        new_users_count = new_users_count,
+        active_page="Manage Users"
+    )
 
 
 @admin_bp.route("/users/<int:user_id>/edit", methods=["GET", "POST"])
@@ -213,4 +285,6 @@ def whitelist_user(user_id):
     user.is_active = True
     db.session.commit()
     notify_admin(f"User '{user.username}' has been whitelisted.", "success")
-    return redirect(url_for("admin.blacklisted_users"))
+    return redirect(
+        url_for("admin.manage_users"),
+    )

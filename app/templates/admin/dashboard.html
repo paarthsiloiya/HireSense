@@ -78,7 +78,7 @@
                     </form>
                 </div>
 
-                <div class="overflow-x-auto overflow-y-auto">
+                <div class="h-130 overflow-x-auto overflow-y-auto">
                     {% if pending_users %}
                     <table class="w-full text-left border-collapse">
                         <thead class="sticky top-0 z-10">
@@ -87,13 +87,12 @@
                                 <th class="px-6 py-3 text-center">Email</th>
                                 <th class="px-6 py-3 text-center">Created</th>
                                 <th class="px-6 py-3 text-center">Role</th>
-                                <th class="px-6 py-3 text-center">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-border-main bg-surface">
+                        <tbody class="bg-surface">
                             {% for user in pending_users %}
                             <tr
-                                class="group hover:bg-background hover:-translate-y-[1px] hover:shadow-[0_4px_12px_-4px_rgba(0,0,0,0.1)] transition-all duration-300 cursor-default bg-surface relative z-0 hover:z-10">
+                                class="group hover:bg-background hover:-translate-y-1 transition-all duration-300 cursor-default bg-surface relative z-0 hover:z-10">
                                 <td class="px-6 py-5">
                                     <div class="flex items-center gap-3 justify-center">
                                         <img src="https://api.dicebear.com/9.x/identicon/svg?seed={{ user.username }}"
@@ -122,21 +121,6 @@
                                         {{ (user.role).title() }}
                                     </div>
                                 </td>
-                                <td class="px-6 py-5 text-center">
-                                    <div class="flex items-center space-x-2 justify-center">
-                                        <form method="POST"
-                                            action="{{ url_for('admin.approve_user', user_id=user.id) }}"
-                                            style="display:inline;">
-                                            <button
-                                                class="text-sm px-3 py-1.5 bg-primary-700 text-text-inverse rounded-lg hover:bg-primary-800 transition-colors shadow-sm">Approve</button>
-                                        </form>
-                                        <form method="POST" action="{{ url_for('admin.reject_user', user_id=user.id) }}"
-                                            style="display:inline;">
-                                            <button
-                                                class="text-sm px-3 py-1.5 bg-rose-50 text-rose-600 border border-rose-200 rounded-lg hover:bg-rose-100 transition-colors">Deny</button>
-                                        </form>
-                                    </div>
-                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -147,182 +131,189 @@
                     </div>
                     {% endif %}
                 </div>
+                <div class="px-3 py-4 bg-surface border-t border-border-main">
+                    <a href="{{ url_for('admin.manage_users') }}""
+                        class="text-primary-600 text-lg font-bold tracking-wider hover:underline">
+                    View All</a>
+                </div>
             </div>
         </div>
 
         <!-- Side Widgets -->
-        <div class="space-y-6 col-span-1 md:col-span-1 lg:col-span-1">
-            <!-- Security Widget -->
-            <div
-                class="bg-surface rounded-xl border border-border-main shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow">
-                <div class="p-6 bg-background border-b border-border-main">
-                    <div class="flex items-center gap-3">
-                        <span class="material-symbols-outlined text-rose-600">shield_with_heart</span>
-                        <h3 class="font-bold text-text-main">Suspicious Activity</h3>
-                    </div>
-                    <p class="text-xs text-text-muted mt-1">High-risk intervention required</p>
+        <div class=" space-y-6 col-span-1 md:col-span-1 lg:col-span-1">
+                        <!-- Security Widget -->
+                        <div
+                            class="bg-surface rounded-xl border border-border-main shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+                            <div class="p-6 bg-background border-b border-border-main">
+                                <div class="flex items-center gap-3">
+                                    <span class="material-symbols-outlined text-rose-600">shield_with_heart</span>
+                                    <h3 class="font-bold text-text-main">Suspicious Activity</h3>
+                                </div>
+                                <p class="text-xs text-text-muted mt-1">High-risk intervention required</p>
+                            </div>
+
+                            <div class="p-4 space-y-4 overflow-y-auto max-h-80 bg-surface">
+                                <div
+                                    class="p-4 bg-rose-50/30 rounded-xl border border-rose-100 hover:bg-rose-50/50 transition-colors">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span
+                                            class="text-[10px] font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded">CRITICAL</span>
+                                        <span class="text-[10px] text-text-light">2m ago</span>
+                                    </div>
+                                    <p class="text-sm font-mono text-text-main font-bold">192.168.1.104</p>
+                                    <p class="text-xs text-text-muted mt-1">Multiple failed admin logins detected from
+                                        Frankfurt, DE
+                                    </p>
+                                    <button
+                                        class="w-full mt-4 py-2 bg-rose-600 hover:bg-rose-700 text-text-inverse text-xs font-bold rounded-lg transition-colors shadow-sm">
+                                        Block IP Address
+                                    </button>
+                                </div>
+
+                                <div
+                                    class="p-4 bg-amber-50/30 rounded-xl border border-amber-100 hover:bg-amber-50/50 transition-colors">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span
+                                            class="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded">WARNING</span>
+                                        <span class="text-[10px] text-text-light">15m ago</span>
+                                    </div>
+                                    <p class="text-sm font-mono text-text-main font-bold">45.76.21.90</p>
+                                    <p class="text-xs text-text-muted mt-1">Rapid API scraping attempt on
+                                        /resume-analysis endpoint
+                                    </p>
+                                    <button
+                                        class="w-full mt-4 py-2 border border-border-main hover:bg-background text-text-muted text-xs font-bold rounded-lg transition-colors">
+                                        Review Logs
+                                    </button>
+                                </div>
+
+                                <div
+                                    class="p-4 bg-background rounded-xl border border-border-main hover:bg-background/50 transition-colors">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span
+                                            class="text-[10px] font-bold text-text-muted bg-border-main px-2 py-0.5 rounded">INFO</span>
+                                        <span class="text-[10px] text-text-light">1h ago</span>
+                                    </div>
+                                    <p class="text-sm font-mono text-text-main font-bold">System</p>
+                                    <p class="text-xs text-text-muted mt-1">New admin user created: avneesh_admin</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AI Model Status -->
+                        <div
+                            class="bg-surface rounded-xl border border-border-main shadow-sm p-6 hover:shadow-md transition-shadow">
+                            <h3 class="text-sm font-bold mb-4 text-text-main">AI Model Status</h3>
+
+                            <div class="space-y-4 overflow-y-auto max-h-60 pr-1">
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span class="text-text-muted font-medium">NLP Accuracy</span>
+                                        <span class="font-bold text-text-main">98.4%</span>
+                                    </div>
+                                    <div class="w-full bg-background h-1.5 rounded-full overflow-hidden">
+                                        <div class="bg-blue-600 h-full w-[98.4%]"></div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span class="text-text-muted font-medium">Inference Latency</span>
+                                        <span class="font-bold text-text-main">24ms</span>
+                                    </div>
+                                    <div class="w-full bg-background h-1.5 rounded-full overflow-hidden">
+                                        <div class="bg-blue-600 h-full w-[15%]"></div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span class="text-text-muted font-medium">Memory Usage</span>
+                                        <span class="font-bold text-text-main">64%</span>
+                                    </div>
+                                    <div class="w-full bg-background h-1.5 rounded-full overflow-hidden">
+                                        <div class="bg-amber-500 h-full w-[64%]"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                 </div>
 
-                <div class="p-4 space-y-4 overflow-y-auto max-h-80 bg-surface">
-                    <div
-                        class="p-4 bg-rose-50/30 rounded-xl border border-rose-100 hover:bg-rose-50/50 transition-colors">
-                        <div class="flex items-center justify-between mb-2">
-                            <span
-                                class="text-[10px] font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded">CRITICAL</span>
-                            <span class="text-[10px] text-text-light">2m ago</span>
-                        </div>
-                        <p class="text-sm font-mono text-text-main font-bold">192.168.1.104</p>
-                        <p class="text-xs text-text-muted mt-1">Multiple failed admin logins detected from Frankfurt, DE
-                        </p>
-                        <button
-                            class="w-full mt-4 py-2 bg-rose-600 hover:bg-rose-700 text-text-inverse text-xs font-bold rounded-lg transition-colors shadow-sm">
-                            Block IP Address
-                        </button>
-                    </div>
-
-                    <div
-                        class="p-4 bg-amber-50/30 rounded-xl border border-amber-100 hover:bg-amber-50/50 transition-colors">
-                        <div class="flex items-center justify-between mb-2">
-                            <span
-                                class="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded">WARNING</span>
-                            <span class="text-[10px] text-text-light">15m ago</span>
-                        </div>
-                        <p class="text-sm font-mono text-text-main font-bold">45.76.21.90</p>
-                        <p class="text-xs text-text-muted mt-1">Rapid API scraping attempt on /resume-analysis endpoint
-                        </p>
-                        <button
-                            class="w-full mt-4 py-2 border border-border-main hover:bg-background text-text-muted text-xs font-bold rounded-lg transition-colors">
-                            Review Logs
-                        </button>
-                    </div>
-
-                    <div
-                        class="p-4 bg-background rounded-xl border border-border-main hover:bg-background/50 transition-colors">
-                        <div class="flex items-center justify-between mb-2">
-                            <span
-                                class="text-[10px] font-bold text-text-muted bg-border-main px-2 py-0.5 rounded">INFO</span>
-                            <span class="text-[10px] text-text-light">1h ago</span>
-                        </div>
-                        <p class="text-sm font-mono text-text-main font-bold">System</p>
-                        <p class="text-xs text-text-muted mt-1">New admin user created: avneesh_admin</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- AI Model Status -->
-            <div
-                class="bg-surface rounded-xl border border-border-main shadow-sm p-6 hover:shadow-md transition-shadow">
-                <h3 class="text-sm font-bold mb-4 text-text-main">AI Model Status</h3>
-
-                <div class="space-y-4 overflow-y-auto max-h-60 pr-1">
-                    <div>
-                        <div class="flex justify-between text-xs mb-1">
-                            <span class="text-text-muted font-medium">NLP Accuracy</span>
-                            <span class="font-bold text-text-main">98.4%</span>
-                        </div>
-                        <div class="w-full bg-background h-1.5 rounded-full overflow-hidden">
-                            <div class="bg-blue-600 h-full w-[98.4%]"></div>
+                <!-- User Lifecycle List -->
+                <div
+                    class="bg-surface rounded-xl col-span-1 md:col-span-1 lg:col-span-2 border border-border-main shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                    <div class="px-6 py-5 border-b border-border-main flex items-center justify-between">
+                        <h3 class="text-lg font-bold text-text-main">User Lifecycle</h3>
+                        <div class="flex gap-2">
+                            <button
+                                class="p-2 bg-background rounded-lg text-text-muted hover:bg-background hover:text-text-muted transition-colors">
+                                <span class="material-symbols-outlined text-sm">filter_list</span>
+                            </button>
+                            <button
+                                class="p-2 bg-background rounded-lg text-text-muted hover:bg-background hover:text-text-muted transition-colors">
+                                <span class="material-symbols-outlined text-sm">search</span>
+                            </button>
                         </div>
                     </div>
 
-                    <div>
-                        <div class="flex justify-between text-xs mb-1">
-                            <span class="text-text-muted font-medium">Inference Latency</span>
-                            <span class="font-bold text-text-main">24ms</span>
+                    <div class="p-4 space-y-3 overflow-y-auto max-h-80 bg-surface">
+                        <div
+                            class="flex items-center gap-4 p-4 bg-background/50 rounded-xl group hover:shadow-md transition-all border border-transparent hover:border-border-main hover:bg-background">
+                            <div class="size-10 rounded-full bg-border-main flex-shrink-0"
+                                style="background-image: url('https://api.dicebear.com/9.x/identicon/svg?seed=ElenaGilbert'); background-size: cover;">
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-bold text-text-main">Elena Gilbert</p>
+                                <p class="text-[10px] text-text-muted">Active for 14 months • 82% Engagement Score</p>
+                            </div>
+                            <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                    class="p-2 bg-surface rounded-lg text-blue-600 border border-border-main hover:shadow-sm hover:border-blue-300 transition-all"
+                                    title="Edit">
+                                    <span class="material-symbols-outlined text-sm">edit</span>
+                                </button>
+                                <button
+                                    class="p-2 bg-surface rounded-lg text-rose-500 border border-border-main hover:shadow-sm hover:border-rose-300 transition-all"
+                                    title="Blacklist">
+                                    <span class="material-symbols-outlined text-sm">block</span>
+                                </button>
+                                <button
+                                    class="p-2 bg-surface rounded-lg text-text-muted border border-border-main hover:shadow-sm hover:border-border-main transition-all"
+                                    title="Reset">
+                                    <span class="material-symbols-outlined text-sm">refresh</span>
+                                </button>
+                            </div>
                         </div>
-                        <div class="w-full bg-background h-1.5 rounded-full overflow-hidden">
-                            <div class="bg-blue-600 h-full w-[15%]"></div>
-                        </div>
-                    </div>
 
-                    <div>
-                        <div class="flex justify-between text-xs mb-1">
-                            <span class="text-text-muted font-medium">Memory Usage</span>
-                            <span class="font-bold text-text-main">64%</span>
-                        </div>
-                        <div class="w-full bg-background h-1.5 rounded-full overflow-hidden">
-                            <div class="bg-amber-500 h-full w-[64%]"></div>
+                        <div
+                            class="flex items-center gap-4 p-4 bg-background/50 rounded-xl group hover:shadow-md transition-all border border-transparent hover:border-border-main hover:bg-background">
+                            <div class="size-10 rounded-full bg-border-main flex-shrink-0"
+                                style="background-image: url('https://api.dicebear.com/9.x/identicon/svg?seed=MarcusHolloway'); background-size: cover;">
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-bold text-text-main">Marcus Holloway</p>
+                                <p class="text-[10px] text-text-muted">Active for 3 months • 95% Skill Match Rate</p>
+                            </div>
+                            <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                    class="p-2 bg-surface rounded-lg text-blue-600 border border-border-main hover:shadow-sm hover:border-blue-300 transition-all"
+                                    title="Edit">
+                                    <span class="material-symbols-outlined text-sm">edit</span>
+                                </button>
+                                <button
+                                    class="p-2 bg-surface rounded-lg text-rose-500 border border-border-main hover:shadow-sm hover:border-rose-300 transition-all"
+                                    title="Blacklist">
+                                    <span class="material-symbols-outlined text-sm">block</span>
+                                </button>
+                                <button
+                                    class="p-2 bg-surface rounded-lg text-text-muted border border-border-main hover:shadow-sm hover:border-border-main transition-all"
+                                    title="Reset">
+                                    <span class="material-symbols-outlined text-sm">refresh</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- User Lifecycle List -->
-        <div
-            class="bg-surface rounded-xl col-span-1 md:col-span-1 lg:col-span-2 border border-border-main shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-            <div class="px-6 py-5 border-b border-border-main flex items-center justify-between">
-                <h3 class="text-lg font-bold text-text-main">User Lifecycle</h3>
-                <div class="flex gap-2">
-                    <button
-                        class="p-2 bg-background rounded-lg text-text-muted hover:bg-background hover:text-text-muted transition-colors">
-                        <span class="material-symbols-outlined text-sm">filter_list</span>
-                    </button>
-                    <button
-                        class="p-2 bg-background rounded-lg text-text-muted hover:bg-background hover:text-text-muted transition-colors">
-                        <span class="material-symbols-outlined text-sm">search</span>
-                    </button>
-                </div>
-            </div>
-
-            <div class="p-4 space-y-3 overflow-y-auto max-h-80 bg-surface">
-                <div
-                    class="flex items-center gap-4 p-4 bg-background/50 rounded-xl group hover:shadow-md transition-all border border-transparent hover:border-border-main hover:bg-background">
-                    <div class="size-10 rounded-full bg-border-main flex-shrink-0"
-                        style="background-image: url('https://api.dicebear.com/9.x/identicon/svg?seed=ElenaGilbert'); background-size: cover;">
-                    </div>
-                    <div class="flex-1">
-                        <p class="text-sm font-bold text-text-main">Elena Gilbert</p>
-                        <p class="text-[10px] text-text-muted">Active for 14 months • 82% Engagement Score</p>
-                    </div>
-                    <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                            class="p-2 bg-surface rounded-lg text-blue-600 border border-border-main hover:shadow-sm hover:border-blue-300 transition-all"
-                            title="Edit">
-                            <span class="material-symbols-outlined text-sm">edit</span>
-                        </button>
-                        <button
-                            class="p-2 bg-surface rounded-lg text-rose-500 border border-border-main hover:shadow-sm hover:border-rose-300 transition-all"
-                            title="Blacklist">
-                            <span class="material-symbols-outlined text-sm">block</span>
-                        </button>
-                        <button
-                            class="p-2 bg-surface rounded-lg text-text-muted border border-border-main hover:shadow-sm hover:border-border-main transition-all"
-                            title="Reset">
-                            <span class="material-symbols-outlined text-sm">refresh</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div
-                    class="flex items-center gap-4 p-4 bg-background/50 rounded-xl group hover:shadow-md transition-all border border-transparent hover:border-border-main hover:bg-background">
-                    <div class="size-10 rounded-full bg-border-main flex-shrink-0"
-                        style="background-image: url('https://api.dicebear.com/9.x/identicon/svg?seed=MarcusHolloway'); background-size: cover;">
-                    </div>
-                    <div class="flex-1">
-                        <p class="text-sm font-bold text-text-main">Marcus Holloway</p>
-                        <p class="text-[10px] text-text-muted">Active for 3 months • 95% Skill Match Rate</p>
-                    </div>
-                    <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                            class="p-2 bg-surface rounded-lg text-blue-600 border border-border-main hover:shadow-sm hover:border-blue-300 transition-all"
-                            title="Edit">
-                            <span class="material-symbols-outlined text-sm">edit</span>
-                        </button>
-                        <button
-                            class="p-2 bg-surface rounded-lg text-rose-500 border border-border-main hover:shadow-sm hover:border-rose-300 transition-all"
-                            title="Blacklist">
-                            <span class="material-symbols-outlined text-sm">block</span>
-                        </button>
-                        <button
-                            class="p-2 bg-surface rounded-lg text-text-muted border border-border-main hover:shadow-sm hover:border-border-main transition-all"
-                            title="Reset">
-                            <span class="material-symbols-outlined text-sm">refresh</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
+        {% endblock %}

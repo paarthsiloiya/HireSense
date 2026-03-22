@@ -14,6 +14,10 @@ PORT_COOKIES = {5010: "hs_session_5010", 5011: "hs_session_5011", 5012: "hs_sess
 def create_app(port: int = 5010) -> Flask:
     app = Flask(__name__)
 
+    from .utility.commands import seed_users    
+    
+    app.cli.add_command(seed_users)
+
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-change-me")
     app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
         "DATABASE_URL", "postgresql://hiresense:hiresense@db:5432/hiresense"

@@ -18,19 +18,19 @@
             <nav class="flex flex-col gap-1.5">
                 <a href="{{ url_for('admin.dashboard') }}"
                     class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
-                   {% if active_page == 'Dashboard' %} bg-primary-900/80 text-primary-400 shadow-sm {% else %} text-text-light hover:bg-primary-900/50 hover:text-text-inverse {% endif %}">
+                    {% if active_page == 'Dashboard' %} bg-primary-900/80 text-primary-400 shadow-sm {% else %} text-text-light hover:bg-primary-900/50 hover:text-text-inverse {% endif %}">
                     <span class="material-symbols-outlined text-[20px]">dashboard</span>
                     Dashboard
                 </a>
                 <a href="{{ url_for('admin.blacklisted_users') }}"
                     class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
-                   {% if active_page == 'Blacklisted Users' %} bg-primary-900/80 text-primary-400 shadow-sm {% else %} text-text-light hover:bg-primary-900/50 hover:text-text-inverse {% endif %}">
+                    {% if active_page == 'Blacklisted Users' %} bg-primary-900/80 text-primary-400 shadow-sm {% else %} text-text-light hover:bg-primary-900/50 hover:text-text-inverse {% endif %}">
                     <span class="material-symbols-outlined text-[20px]">block</span>
                     Blacklisted Users
                 </a>
                 <a href="{{ url_for('admin.manage_users') }}"
                     class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
-                   {% if active_page == 'Manage Users' %} bg-primary-900/80 text-primary-400 shadow-sm {% else %} text-text-light hover:bg-primary-900/50 hover:text-text-inverse {% endif %}">
+                    {% if active_page == 'Manage Users' %} bg-primary-900/80 text-primary-400 shadow-sm {% else %} text-text-light hover:bg-primary-900/50 hover:text-text-inverse {% endif %}">
                     <span class="material-symbols-outlined text-[20px]">manage_accounts</span>
                     Manage Users
                 </a>
