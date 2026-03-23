@@ -514,11 +514,13 @@ class TestManageUsersWorkflow:
         response = client.get("/admin/users/export")
         assert response.status_code == 200
         assert "text/csv" in response.content_type
+        assert len(response.get_data()) > 0  # consume the stream
 
         # Export filtered users
         response = client.get("/admin/users/export?role_filter=employee")
         assert response.status_code == 200
         assert "text/csv" in response.content_type
+        assert len(response.get_data()) > 0  # consume the stream
 
     def test_manage_users_statistics_display(self, client, db_session, admin_user):
         """
