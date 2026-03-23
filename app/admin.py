@@ -62,11 +62,19 @@ def dashboard():
 def export_users():
     # Filter for filtered CSV
     role_filter = request.args.get("role_filter", '')
+    status_filter = request.args.get("status_filter", '')
 
     query = User.query
 
     if role_filter:
         query = query.filter(User.role==role_filter)
+        
+    if status_filter == 'approved':
+        query = query.filter(User.is_approved == True, User.is_blacklisted == False)
+    elif status_filter == 'pending':
+        query = query.filter(User.is_approved == False, User.is_blacklisted == False)
+    elif status_filter == 'blacklisted':
+        query = query.filter(User.is_blacklisted == True)
 
     import csv
     from io import StringIO
@@ -81,12 +89,13 @@ def export_users():
         data.truncate(0)
 
         for user in query:
+            status = "Blacklisted" if user.is_blacklisted else ("Approved" if user.is_approved else "Pending")
             writer.writerow([
                 user.id,
                 user.username,
                 user.email,
                 user.role,
-                "Approved" if user.is_approved else "Pending"
+                status
             ])
 
             yield data.getvalue()
@@ -136,6 +145,7 @@ def manage_users():
     
     # Parameters for filters and page number
     role_filter = request.args.get(key='role_filter', default='', type=str)
+    status_filter = request.args.get(key='status_filter', default='', type=str)
     per_page = request.args.get(key="per_page", default=10, type=int)
     page = request.args.get(key="page", default=1, type=int)
 
@@ -143,7 +153,13 @@ def manage_users():
 
     if role_filter:
         query = query.filter(User.role == role_filter)
-    
+        
+    if status_filter == 'approved':
+        query = query.filter(User.is_approved == True, User.is_blacklisted == False)
+    elif status_filter == 'pending':
+        query = query.filter(User.is_approved == False, User.is_blacklisted == False)
+    elif status_filter == 'blacklisted':
+        query = query.filter(User.is_blacklisted == True)
     # Only shows approved users for the current page the user is on
     pagination = query.order_by(User.created_at.asc()).paginate(page=page, per_page=per_page,error_out=False)
 

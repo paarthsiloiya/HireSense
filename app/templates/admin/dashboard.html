@@ -62,38 +62,31 @@
             <div class="bg-surface rounded-xl border border-border-main shadow-sm overflow-hidden">
                 <div class="px-6 py-5 border-b border-border-main flex items-center justify-between gap-4">
                     <h3 class="text-lg font-bold text-text-main whitespace-nowrap">Pending Requests</h3>
-                    <form method="GET" action="{{ url_for('admin.dashboard') }}"
-                        class="flex items-center gap-2 w-full max-w-md">
-                        <div class="relative w-full flex items-center">
-                            <span
-                                class="material-symbols-outlined absolute left-3 text-text-light text-[18px]">search</span>
-                            <input type="text" name="q" value="{{ search_query or '' }}"
-                                placeholder="Search professionals..."
-                                class="w-full pl-10 pr-4 py-2 text-sm bg-background border border-border-main rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all shadow-sm" />
-                        </div>
-                        <button type="submit"
-                            class="px-4 py-2 bg-background border border-border-main hover:bg-background text-text-muted text-sm font-medium rounded-lg transition-colors shadow-sm whitespace-nowrap">
-                            Search
-                        </button>
-                    </form>
+                    <div class="relative w-full max-w-md flex items-center">
+                        <span
+                            class="material-symbols-outlined absolute left-3 text-text-light text-[18px]">search</span>
+                        <input type="text" id="pending-search" placeholder="Search professionals..."
+                            class="w-full pl-10 pr-4 py-2 text-sm bg-background border border-border-main rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all shadow-sm" />
+                    </div>
                 </div>
 
-                <div class="h-130 overflow-x-auto overflow-y-auto">
+                <div class="max-h-[420px] overflow-x-auto overflow-y-auto" id="pending-table-container">
                     {% if pending_users %}
-                    <table class="w-full text-left border-collapse">
+                    <table class="w-full text-left border-collapse" id="pending-table">
                         <thead class="sticky top-0 z-10">
                             <tr class="bg-background text-sm uppercase text-text-muted tracking-widest font-bold">
                                 <th class="px-6 py-3 text-center">Username</th>
                                 <th class="px-6 py-3 text-center">Email</th>
                                 <th class="px-6 py-3 text-center">Created</th>
                                 <th class="px-6 py-3 text-center">Role</th>
+                                <th class="px-6 py-3 text-center">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-surface">
+                        <tbody class="bg-surface" id="pending-tbody">
                             {% for user in pending_users %}
-                            <tr
-                                class="group hover:bg-background hover:-translate-y-1 transition-all duration-300 cursor-default bg-surface relative z-0 hover:z-10">
-                                <td class="px-6 py-5">
+                            <tr class="pending-row hover:bg-gray-50 transition-colors duration-150 cursor-default border-b border-border-main last:border-b-0"
+                                data-username="{{ user.username|lower }}" data-email="{{ user.email|lower }}">
+                                <td class="px-6 py-4">
                                     <div class="flex items-center gap-3 justify-center">
                                         <img src="https://api.dicebear.com/9.x/identicon/svg?seed={{ user.username }}"
                                             class="w-8 h-8 rounded-full bg-background shadow-sm border border-border-main"
@@ -102,23 +95,35 @@
                                             }}</span>
                                     </div>
                                 </td>
-                                <td class="px-6 py-5 text-center text-sm text-text-muted">
+                                <td class="px-6 py-4 text-center text-sm text-text-muted">
                                     <a href="mailto:{{ user.email }}"
-                                        class="hover:text-blue-600 hover:underline transition-colors">
+                                        class="hover:text-primary-600 hover:underline transition-colors">
                                         {{ user.email }}
                                     </a>
                                 </td>
-                                <td class="px-6 py-5 text-center text-sm text-text-muted">{{
+                                <td class="px-6 py-4 text-center text-sm text-text-muted">{{
                                     user.created_at.strftime('%Y-%m-%d (%H:%M)') }}</td>
-                                <td class="px-6 py-5 text-center text-sm">
-                                    <div class="w-fit px-2 py-1 rounded-xl mx-auto 
-                                    {% if user.role =='manager' %} 
-                                    bg-blue-50 text-blue-600 border border-blue-200
-                                    {% else %} 
-                                    bg-yellow-50 text-yellow-600 border border-yellow-200
-                                    {% endif %}
-                                    ">
-                                        {{ (user.role).title() }}
+                                <td class="px-6 py-4 text-center text-sm">
+                                    <span class="text-text-muted font-medium">{{ (user.role).title() }}</span>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <div class="flex items-center justify-center gap-1.5">
+                                        <form method="POST" action="{{ url_for('admin.approve_user', user_id=user.id) }}" class="inline">
+                                            <button type="submit"
+                                                class="inline-flex items-center gap-0.5 px-2 py-1 text-[11px] font-medium text-white bg-primary-600/90 rounded hover:bg-primary-700 hover:-translate-y-0.5 hover:shadow-sm transition-all"
+                                                title="Approve">
+                                                <span class="material-symbols-outlined text-[13px]">check</span>
+                                                Approve
+                                            </button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('admin.reject_user', user_id=user.id) }}" class="inline">
+                                            <button type="submit"
+                                                class="inline-flex items-center gap-0.5 px-2 py-1 text-[11px] font-medium text-white bg-gray-500/90 rounded hover:bg-gray-600 hover:-translate-y-0.5 hover:shadow-sm transition-all"
+                                                onclick="return confirm('Deny this user registration?')" title="Deny">
+                                                <span class="material-symbols-outlined text-[13px]">close</span>
+                                                Deny
+                                            </button>
+                                        </form>
                                     </div>
                                 </td>
                             </tr>
@@ -132,188 +137,208 @@
                     {% endif %}
                 </div>
                 <div class="px-3 py-4 bg-surface border-t border-border-main">
-                    <a href="{{ url_for('admin.manage_users') }}""
+                    <a href="{{ url_for('admin.manage_users') }}"
                         class="text-primary-600 text-lg font-bold tracking-wider hover:underline">
-                    View All</a>
+                        View All</a>
                 </div>
             </div>
         </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const searchInput = document.getElementById('pending-search');
+                const rows = document.querySelectorAll('.pending-row');
+
+                if (searchInput) {
+                    searchInput.addEventListener('input', function () {
+                        const query = this.value.toLowerCase().trim();
+
+                        rows.forEach(row => {
+                            const username = row.dataset.username || '';
+                            const email = row.dataset.email || '';
+                            const matches = username.includes(query) || email.includes(query);
+                            row.style.display = matches ? '' : 'none';
+                        });
+                    });
+                }
+            });
+        </script>
 
         <!-- Side Widgets -->
         <div class=" space-y-6 col-span-1 md:col-span-1 lg:col-span-1">
-                        <!-- Security Widget -->
-                        <div
-                            class="bg-surface rounded-xl border border-border-main shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow">
-                            <div class="p-6 bg-background border-b border-border-main">
-                                <div class="flex items-center gap-3">
-                                    <span class="material-symbols-outlined text-rose-600">shield_with_heart</span>
-                                    <h3 class="font-bold text-text-main">Suspicious Activity</h3>
-                                </div>
-                                <p class="text-xs text-text-muted mt-1">High-risk intervention required</p>
-                            </div>
-
-                            <div class="p-4 space-y-4 overflow-y-auto max-h-80 bg-surface">
-                                <div
-                                    class="p-4 bg-rose-50/30 rounded-xl border border-rose-100 hover:bg-rose-50/50 transition-colors">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <span
-                                            class="text-[10px] font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded">CRITICAL</span>
-                                        <span class="text-[10px] text-text-light">2m ago</span>
-                                    </div>
-                                    <p class="text-sm font-mono text-text-main font-bold">192.168.1.104</p>
-                                    <p class="text-xs text-text-muted mt-1">Multiple failed admin logins detected from
-                                        Frankfurt, DE
-                                    </p>
-                                    <button
-                                        class="w-full mt-4 py-2 bg-rose-600 hover:bg-rose-700 text-text-inverse text-xs font-bold rounded-lg transition-colors shadow-sm">
-                                        Block IP Address
-                                    </button>
-                                </div>
-
-                                <div
-                                    class="p-4 bg-amber-50/30 rounded-xl border border-amber-100 hover:bg-amber-50/50 transition-colors">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <span
-                                            class="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded">WARNING</span>
-                                        <span class="text-[10px] text-text-light">15m ago</span>
-                                    </div>
-                                    <p class="text-sm font-mono text-text-main font-bold">45.76.21.90</p>
-                                    <p class="text-xs text-text-muted mt-1">Rapid API scraping attempt on
-                                        /resume-analysis endpoint
-                                    </p>
-                                    <button
-                                        class="w-full mt-4 py-2 border border-border-main hover:bg-background text-text-muted text-xs font-bold rounded-lg transition-colors">
-                                        Review Logs
-                                    </button>
-                                </div>
-
-                                <div
-                                    class="p-4 bg-background rounded-xl border border-border-main hover:bg-background/50 transition-colors">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <span
-                                            class="text-[10px] font-bold text-text-muted bg-border-main px-2 py-0.5 rounded">INFO</span>
-                                        <span class="text-[10px] text-text-light">1h ago</span>
-                                    </div>
-                                    <p class="text-sm font-mono text-text-main font-bold">System</p>
-                                    <p class="text-xs text-text-muted mt-1">New admin user created: avneesh_admin</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- AI Model Status -->
-                        <div
-                            class="bg-surface rounded-xl border border-border-main shadow-sm p-6 hover:shadow-md transition-shadow">
-                            <h3 class="text-sm font-bold mb-4 text-text-main">AI Model Status</h3>
-
-                            <div class="space-y-4 overflow-y-auto max-h-60 pr-1">
-                                <div>
-                                    <div class="flex justify-between text-xs mb-1">
-                                        <span class="text-text-muted font-medium">NLP Accuracy</span>
-                                        <span class="font-bold text-text-main">98.4%</span>
-                                    </div>
-                                    <div class="w-full bg-background h-1.5 rounded-full overflow-hidden">
-                                        <div class="bg-blue-600 h-full w-[98.4%]"></div>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <div class="flex justify-between text-xs mb-1">
-                                        <span class="text-text-muted font-medium">Inference Latency</span>
-                                        <span class="font-bold text-text-main">24ms</span>
-                                    </div>
-                                    <div class="w-full bg-background h-1.5 rounded-full overflow-hidden">
-                                        <div class="bg-blue-600 h-full w-[15%]"></div>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <div class="flex justify-between text-xs mb-1">
-                                        <span class="text-text-muted font-medium">Memory Usage</span>
-                                        <span class="font-bold text-text-main">64%</span>
-                                    </div>
-                                    <div class="w-full bg-background h-1.5 rounded-full overflow-hidden">
-                                        <div class="bg-amber-500 h-full w-[64%]"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+            <!-- Security Widget -->
+            <div
+                class="bg-surface rounded-xl border border-border-main shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+                <div class="p-6 bg-background border-b border-border-main">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-rose-600">shield_with_heart</span>
+                        <h3 class="font-bold text-text-main">Suspicious Activity</h3>
+                    </div>
+                    <p class="text-xs text-text-muted mt-1">High-risk intervention required</p>
                 </div>
 
-                <!-- User Lifecycle List -->
-                <div
-                    class="bg-surface rounded-xl col-span-1 md:col-span-1 lg:col-span-2 border border-border-main shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-                    <div class="px-6 py-5 border-b border-border-main flex items-center justify-between">
-                        <h3 class="text-lg font-bold text-text-main">User Lifecycle</h3>
-                        <div class="flex gap-2">
-                            <button
-                                class="p-2 bg-background rounded-lg text-text-muted hover:bg-background hover:text-text-muted transition-colors">
-                                <span class="material-symbols-outlined text-sm">filter_list</span>
-                            </button>
-                            <button
-                                class="p-2 bg-background rounded-lg text-text-muted hover:bg-background hover:text-text-muted transition-colors">
-                                <span class="material-symbols-outlined text-sm">search</span>
-                            </button>
+                <div class="p-4 space-y-4 overflow-y-auto max-h-80 bg-surface">
+                    <div
+                        class="p-4 bg-rose-50/30 rounded-xl border border-rose-100 hover:bg-rose-50/50 transition-colors">
+                        <div class="flex items-center justify-between mb-2">
+                            <span
+                                class="text-[10px] font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded">CRITICAL</span>
+                            <span class="text-[10px] text-text-light">2m ago</span>
+                        </div>
+                        <p class="text-sm font-mono text-text-main font-bold">192.168.1.104</p>
+                        <p class="text-xs text-text-muted mt-1">Multiple failed admin logins detected from
+                            Frankfurt, DE
+                        </p>
+                        <button
+                            class="w-full mt-4 py-2 bg-rose-600 hover:bg-rose-700 text-text-inverse text-xs font-bold rounded-lg transition-colors shadow-sm">
+                            Block IP Address
+                        </button>
+                    </div>
+
+                    <div
+                        class="p-4 bg-amber-50/30 rounded-xl border border-amber-100 hover:bg-amber-50/50 transition-colors">
+                        <div class="flex items-center justify-between mb-2">
+                            <span
+                                class="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded">WARNING</span>
+                            <span class="text-[10px] text-text-light">15m ago</span>
+                        </div>
+                        <p class="text-sm font-mono text-text-main font-bold">45.76.21.90</p>
+                        <p class="text-xs text-text-muted mt-1">Rapid API scraping attempt on
+                            /resume-analysis endpoint
+                        </p>
+                        <button
+                            class="w-full mt-4 py-2 border border-border-main hover:bg-background text-text-muted text-xs font-bold rounded-lg transition-colors">
+                            Review Logs
+                        </button>
+                    </div>
+
+                    <div
+                        class="p-4 bg-background rounded-xl border border-border-main hover:bg-background/50 transition-colors">
+                        <div class="flex items-center justify-between mb-2">
+                            <span
+                                class="text-[10px] font-bold text-text-muted bg-border-main px-2 py-0.5 rounded">INFO</span>
+                            <span class="text-[10px] text-text-light">1h ago</span>
+                        </div>
+                        <p class="text-sm font-mono text-text-main font-bold">System</p>
+                        <p class="text-xs text-text-muted mt-1">New admin user created: avneesh_admin</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Model Status -->
+            <div
+                class="bg-surface rounded-xl border border-border-main shadow-sm p-6 hover:shadow-md transition-shadow">
+                <h3 class="text-sm font-bold mb-4 text-text-main">AI Model Status</h3>
+
+                <div class="space-y-4 overflow-y-auto max-h-60 pr-1">
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-text-muted font-medium">NLP Accuracy</span>
+                            <span class="font-bold text-text-main">98.4%</span>
+                        </div>
+                        <div class="w-full bg-background h-1.5 rounded-full overflow-hidden">
+                            <div class="bg-blue-600 h-full w-[98.4%]"></div>
                         </div>
                     </div>
 
-                    <div class="p-4 space-y-3 overflow-y-auto max-h-80 bg-surface">
-                        <div
-                            class="flex items-center gap-4 p-4 bg-background/50 rounded-xl group hover:shadow-md transition-all border border-transparent hover:border-border-main hover:bg-background">
-                            <div class="size-10 rounded-full bg-border-main flex-shrink-0"
-                                style="background-image: url('https://api.dicebear.com/9.x/identicon/svg?seed=ElenaGilbert'); background-size: cover;">
-                            </div>
-                            <div class="flex-1">
-                                <p class="text-sm font-bold text-text-main">Elena Gilbert</p>
-                                <p class="text-[10px] text-text-muted">Active for 14 months • 82% Engagement Score</p>
-                            </div>
-                            <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button
-                                    class="p-2 bg-surface rounded-lg text-blue-600 border border-border-main hover:shadow-sm hover:border-blue-300 transition-all"
-                                    title="Edit">
-                                    <span class="material-symbols-outlined text-sm">edit</span>
-                                </button>
-                                <button
-                                    class="p-2 bg-surface rounded-lg text-rose-500 border border-border-main hover:shadow-sm hover:border-rose-300 transition-all"
-                                    title="Blacklist">
-                                    <span class="material-symbols-outlined text-sm">block</span>
-                                </button>
-                                <button
-                                    class="p-2 bg-surface rounded-lg text-text-muted border border-border-main hover:shadow-sm hover:border-border-main transition-all"
-                                    title="Reset">
-                                    <span class="material-symbols-outlined text-sm">refresh</span>
-                                </button>
-                            </div>
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-text-muted font-medium">Inference Latency</span>
+                            <span class="font-bold text-text-main">24ms</span>
                         </div>
+                        <div class="w-full bg-background h-1.5 rounded-full overflow-hidden">
+                            <div class="bg-blue-600 h-full w-[15%]"></div>
+                        </div>
+                    </div>
 
-                        <div
-                            class="flex items-center gap-4 p-4 bg-background/50 rounded-xl group hover:shadow-md transition-all border border-transparent hover:border-border-main hover:bg-background">
-                            <div class="size-10 rounded-full bg-border-main flex-shrink-0"
-                                style="background-image: url('https://api.dicebear.com/9.x/identicon/svg?seed=MarcusHolloway'); background-size: cover;">
-                            </div>
-                            <div class="flex-1">
-                                <p class="text-sm font-bold text-text-main">Marcus Holloway</p>
-                                <p class="text-[10px] text-text-muted">Active for 3 months • 95% Skill Match Rate</p>
-                            </div>
-                            <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button
-                                    class="p-2 bg-surface rounded-lg text-blue-600 border border-border-main hover:shadow-sm hover:border-blue-300 transition-all"
-                                    title="Edit">
-                                    <span class="material-symbols-outlined text-sm">edit</span>
-                                </button>
-                                <button
-                                    class="p-2 bg-surface rounded-lg text-rose-500 border border-border-main hover:shadow-sm hover:border-rose-300 transition-all"
-                                    title="Blacklist">
-                                    <span class="material-symbols-outlined text-sm">block</span>
-                                </button>
-                                <button
-                                    class="p-2 bg-surface rounded-lg text-text-muted border border-border-main hover:shadow-sm hover:border-border-main transition-all"
-                                    title="Reset">
-                                    <span class="material-symbols-outlined text-sm">refresh</span>
-                                </button>
-                            </div>
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-text-muted font-medium">Memory Usage</span>
+                            <span class="font-bold text-text-main">64%</span>
+                        </div>
+                        <div class="w-full bg-background h-1.5 rounded-full overflow-hidden">
+                            <div class="bg-amber-500 h-full w-[64%]"></div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        {% endblock %}
+
+        <!-- User Lifecycle List -->
+        <div
+            class="bg-surface rounded-xl col-span-1 md:col-span-1 lg:col-span-2 border border-border-main shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+            <div class="px-6 py-5 border-b border-border-main flex items-center justify-between">
+                <h3 class="text-lg font-bold text-text-main">User Lifecycle</h3>
+                <div class="flex gap-2">
+                    <button
+                        class="p-2 bg-background rounded-lg text-text-muted hover:bg-background hover:text-text-muted transition-colors">
+                        <span class="material-symbols-outlined text-sm">filter_list</span>
+                    </button>
+                    <button
+                        class="p-2 bg-background rounded-lg text-text-muted hover:bg-background hover:text-text-muted transition-colors">
+                        <span class="material-symbols-outlined text-sm">search</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-4 space-y-3 overflow-y-auto max-h-80 bg-surface">
+                <div
+                    class="flex items-center gap-4 p-4 bg-background/50 rounded-xl group hover:shadow-md transition-all border border-transparent hover:border-border-main hover:bg-background">
+                    <div class="size-10 rounded-full bg-border-main flex-shrink-0"
+                        style="background-image: url('https://api.dicebear.com/9.x/identicon/svg?seed=ElenaGilbert'); background-size: cover;">
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-bold text-text-main">Elena Gilbert</p>
+                        <p class="text-[10px] text-text-muted">Active for 14 months • 82% Engagement Score</p>
+                    </div>
+                    <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                            class="p-2 bg-surface rounded-lg text-blue-600 border border-border-main hover:shadow-sm hover:border-blue-300 transition-all"
+                            title="Edit">
+                            <span class="material-symbols-outlined text-sm">edit</span>
+                        </button>
+                        <button
+                            class="p-2 bg-surface rounded-lg text-rose-500 border border-border-main hover:shadow-sm hover:border-rose-300 transition-all"
+                            title="Blacklist">
+                            <span class="material-symbols-outlined text-sm">block</span>
+                        </button>
+                        <button
+                            class="p-2 bg-surface rounded-lg text-text-muted border border-border-main hover:shadow-sm hover:border-border-main transition-all"
+                            title="Reset">
+                            <span class="material-symbols-outlined text-sm">refresh</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div
+                    class="flex items-center gap-4 p-4 bg-background/50 rounded-xl group hover:shadow-md transition-all border border-transparent hover:border-border-main hover:bg-background">
+                    <div class="size-10 rounded-full bg-border-main flex-shrink-0"
+                        style="background-image: url('https://api.dicebear.com/9.x/identicon/svg?seed=MarcusHolloway'); background-size: cover;">
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-bold text-text-main">Marcus Holloway</p>
+                        <p class="text-[10px] text-text-muted">Active for 3 months • 95% Skill Match Rate</p>
+                    </div>
+                    <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                            class="p-2 bg-surface rounded-lg text-blue-600 border border-border-main hover:shadow-sm hover:border-blue-300 transition-all"
+                            title="Edit">
+                            <span class="material-symbols-outlined text-sm">edit</span>
+                        </button>
+                        <button
+                            class="p-2 bg-surface rounded-lg text-rose-500 border border-border-main hover:shadow-sm hover:border-rose-300 transition-all"
+                            title="Blacklist">
+                            <span class="material-symbols-outlined text-sm">block</span>
+                        </button>
+                        <button
+                            class="p-2 bg-surface rounded-lg text-text-muted border border-border-main hover:shadow-sm hover:border-border-main transition-all"
+                            title="Reset">
+                            <span class="material-symbols-outlined text-sm">refresh</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

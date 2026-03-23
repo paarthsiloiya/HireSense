@@ -112,6 +112,124 @@ class TestUserManagement:
         assert response.status_code == 200
         assert manager_user.email.encode() in response.data or employee_user.email.encode() in response.data
 
+    def test_manage_users_pagination(self, authenticated_admin_client, db_session):
+        """Test pagination on manage users page."""
+        # Create multiple users
+        for i in range(15):
+            user = User(
+                username=f"paginationtest{i}",
+                email=f"page{i}@test.com",
+                role="employee",
+                is_approved=True,
+            )
+            user.set_password("Test@123")
+            db_session.add(user)
+        db_session.commit()
+
+        # Test first page with 10 per page
+        response = authenticated_admin_client.get("/admin/users?per_page=10")
+        assert response.status_code == 200
+
+        # Test with different per_page value
+        response = authenticated_admin_client.get("/admin/users?per_page=20")
+        assert response.status_code == 200
+
+    def test_manage_users_role_filter(self, authenticated_admin_client, manager_user, employee_user):
+        """Test role filtering on manage users page."""
+        # Filter by manager role
+        response = authenticated_admin_client.get("/admin/users?role_filter=manager")
+        assert response.status_code == 200
+
+        # Filter by employee role
+        response = authenticated_admin_client.get("/admin/users?role_filter=employee")
+        assert response.status_code == 200
+
+    def test_manage_users_status_filter(self, authenticated_admin_client, db_session):
+        """Test status filtering on manage users page."""
+        # Create approved and pending users
+        approved_user = User(
+            username="approveduser",
+            email="approved@test.com",
+            role="employee",
+            is_approved=True,
+        )
+        approved_user.set_password("Test@123")
+
+        pending_user = User(
+            username="pendinguser",
+            email="pending@test.com",
+            role="employee",
+            is_approved=False,
+        )
+        pending_user.set_password("Test@123")
+
+        db_session.add_all([approved_user, pending_user])
+        db_session.commit()
+
+        # Test page loads with status filter options
+        response = authenticated_admin_client.get("/admin/users")
+        assert response.status_code == 200
+        assert b"status-filter" in response.data or b"Status" in response.data
+        
+        # Test filtering by approved
+        response = authenticated_admin_client.get("/admin/users?status_filter=approved")
+        assert response.status_code == 200
+        assert b"approveduser" in response.data
+        assert b"pendinguser" not in response.data
+
+        # Test filtering by pending
+        response = authenticated_admin_client.get("/admin/users?status_filter=pending")
+        assert response.status_code == 200
+        assert b"pendinguser" in response.data
+        assert b"approveduser" not in response.data
+
+    def test_manage_users_combined_filters(self, authenticated_admin_client, db_session):
+        """Test combining role and status filters."""
+        # Create users with different combinations
+        approved_manager = User(
+            username="appmanager",
+            email="appmanager@test.com",
+            role="manager",
+            is_approved=True,
+        )
+        approved_manager.set_password("Test@123")
+
+        pending_employee = User(
+            username="pendemp",
+            email="pendemp@test.com",
+            role="employee",
+            is_approved=False,
+        )
+        pending_employee.set_password("Test@123")
+
+        db_session.add_all([approved_manager, pending_employee])
+        db_session.commit()
+
+        # Test combined filters
+        response = authenticated_admin_client.get("/admin/users?role_filter=manager&status_filter=approved")
+        assert response.status_code == 200
+        assert b"appmanager" in response.data
+        assert b"pendemp" not in response.data
+
+        response = authenticated_admin_client.get("/admin/users?role_filter=employee&status_filter=pending")
+        assert response.status_code == 200
+        assert b"pendemp" in response.data
+        assert b"appmanager" not in response.data
+
+    def test_manage_users_shows_statistics(self, authenticated_admin_client):
+        """Test that manage users page shows user statistics."""
+        response = authenticated_admin_client.get("/admin/users")
+        assert response.status_code == 200
+        # Check for statistical elements
+        assert b"New Users" in response.data or b"Awaiting" in response.data or b"Blacklisted" in response.data
+
+    def test_manage_users_action_buttons(self, authenticated_admin_client, employee_user):
+        """Test that action buttons are present for users."""
+        response = authenticated_admin_client.get("/admin/users")
+        assert response.status_code == 200
+        # Check for action elements
+        assert b"Edit" in response.data or b"edit" in response.data
+
     def test_edit_user_page_loads(self, authenticated_admin_client, employee_user):
         """Test that edit user page loads successfully."""
         response = authenticated_admin_client.get(f"/admin/users/{employee_user.id}/edit")

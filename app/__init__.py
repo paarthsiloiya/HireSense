@@ -14,8 +14,14 @@ PORT_COOKIES = {5010: "hs_session_5010", 5011: "hs_session_5011", 5012: "hs_sess
 def create_app(port: int = 5010) -> Flask:
     app = Flask(__name__)
 
-    from .utility.commands import seed_users    
-    
+    # Import CLI command from utility package at project root
+    import sys
+    import os
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if project_root not in sys.path:
+        sys.path.insert(0, project_root)
+
+    from utility.seed_users import seed_users
     app.cli.add_command(seed_users)
 
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-change-me")

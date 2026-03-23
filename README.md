@@ -232,6 +232,41 @@ Tables are created and the admin user is seeded automatically on first run. Regi
 
 ---
 
+## Utility Scripts
+
+HireSense includes utility scripts for development and testing in the `utility/` folder.
+
+### Seeding Test Users
+
+Generate fake users for testing:
+
+```bash
+# Default: Seed 30 approved users with mixed roles
+flask seed-users
+
+# Seed a specific number
+flask seed-users 50
+
+# Seed pending (unapproved) users
+flask seed-users --pending
+
+# Seed only managers or employees
+flask seed-users --role=manager
+flask seed-users --role=employee
+```
+
+All seeded users have the password: `password123`
+
+**Docker usage:**
+
+```bash
+docker compose exec app_5010 flask seed-users
+```
+
+For more details, see [docs/UTILITY.md](docs/UTILITY.md).
+
+---
+
 ## Default Admin Credentials
 
 | Username | Password     |

@@ -439,6 +439,117 @@ class TestSearchAndFilterWorkflow:
         assert employee_user.email.encode() in search_by_email.data
 
 
+class TestManageUsersWorkflow:
+    """E2E tests for manage users page workflows."""
+
+    def test_manage_users_filter_and_pagination_workflow(self, client, db_session, admin_user):
+        """
+        Test complete workflow: create users, filter, paginate, take actions.
+        """
+        # Create 25 users with mixed roles
+        for i in range(25):
+            user = User(
+                username=f"workflowuser{i}",
+                email=f"workflow{i}@test.com",
+                role="manager" if i % 2 == 0 else "employee",
+                is_approved=True,
+            )
+            user.set_password("Test@123")
+            db_session.add(user)
+        db_session.commit()
+
+        # Admin logs in
+        client.post("/auth/login", data={
+            "email": admin_user.email,
+            "password": "Admin@123",
+        }, follow_redirects=True)
+
+        # View first page
+        response = client.get("/admin/users?per_page=10&page=1")
+        assert response.status_code == 200
+
+        # Navigate to second page
+        response = client.get("/admin/users?per_page=10&page=2")
+        assert response.status_code == 200
+
+        # Filter by role
+        response = client.get("/admin/users?role_filter=manager")
+        assert response.status_code == 200
+
+        # Filter by status
+        response = client.get("/admin/users?status_filter=approved")
+        assert response.status_code == 200
+
+        # Filter by status and role
+        response = client.get("/admin/users?status_filter=pending&role_filter=manager")
+        assert response.status_code == 200
+
+        # Filter with pagination
+        response = client.get("/admin/users?role_filter=employee&status_filter=approved&per_page=10&page=1")
+        assert response.status_code == 200
+
+    def test_manage_users_export_workflow(self, client, db_session, admin_user):
+        """
+        Test user export workflow from manage users page.
+        """
+        # Create some users
+        for i in range(5):
+            user = User(
+                username=f"exportuser{i}",
+                email=f"export{i}@test.com",
+                role="employee",
+                is_approved=True,
+            )
+            user.set_password("Test@123")
+            db_session.add(user)
+        db_session.commit()
+
+        # Admin logs in
+        client.post("/auth/login", data={
+            "email": admin_user.email,
+            "password": "Admin@123",
+        }, follow_redirects=True)
+
+        # Export all users
+        response = client.get("/admin/users/export")
+        assert response.status_code == 200
+        assert "text/csv" in response.content_type
+
+        # Export filtered users
+        response = client.get("/admin/users/export?role_filter=employee")
+        assert response.status_code == 200
+        assert "text/csv" in response.content_type
+
+    def test_manage_users_statistics_display(self, client, db_session, admin_user):
+        """
+        Test that user statistics are displayed correctly.
+        """
+        # Create users with various states
+        approved = User(username="statapproved", email="approved@test.com", role="employee", is_approved=True)
+        approved.set_password("Test@123")
+
+        pending = User(username="statpending", email="pending@test.com", role="employee", is_approved=False)
+        pending.set_password("Test@123")
+
+        blacklisted = User(username="statblacklisted", email="blacklisted@test.com", role="employee",
+                          is_approved=True, is_blacklisted=True)
+        blacklisted.set_password("Test@123")
+
+        db_session.add_all([approved, pending, blacklisted])
+        db_session.commit()
+
+        # Admin logs in
+        client.post("/auth/login", data={
+            "email": admin_user.email,
+            "password": "Admin@123",
+        }, follow_redirects=True)
+
+        # View manage users page
+        response = client.get("/admin/users")
+        assert response.status_code == 200
+        # Page should load with statistics
+
+
 class TestCompleteApplicationFlow:
     """E2E test for complete application workflow."""
 

@@ -68,6 +68,18 @@ Thank you for your interest in contributing to HireSense. This document covers t
 
    Visit `http://localhost:5010/auth/register` to create `manager` or `employee` accounts. The `admin` account is pre-seeded only — it cannot be registered.
 
+   **Alternatively, seed test users via CLI:**
+
+   ```bash
+   # In Docker
+   docker compose exec app_5010 flask seed-users
+
+   # Local
+   flask seed-users
+   ```
+
+   This creates 30 test users with password `password123`. See [docs/UTILITY.md](docs/UTILITY.md) for more options.
+
 ### Alternative: Local Virtual Environment (no Docker)
 
 1. Create and activate a virtual environment

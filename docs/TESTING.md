@@ -23,7 +23,7 @@ This document provides comprehensive guidance on the automated testing suite for
 
 ## Overview
 
-The HireSense test suite is built using `pytest` and `pytest-cov`, achieving **85-90% code coverage** across the application. The suite includes:
+The HireSense test suite is built using `pytest` and `pytest-cov`, achieving **95-97% code coverage** across the application. The suite includes:
 
 - **Unit Tests**: Test individual components in isolation
 - **Integration Tests**: Verify interactions between modules

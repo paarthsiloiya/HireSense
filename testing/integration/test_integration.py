@@ -459,3 +459,141 @@ class TestRoleTransitions:
 
         assert employee_access.status_code == 403
         assert manager_access.status_code == 200
+
+
+class TestManageUsersPageIntegration:
+    """Integration tests for manage users page functionality."""
+
+    def test_manage_users_with_filters_integration(self, client, db_session, admin_user):
+        """Test manage users page with various filter combinations."""
+        # Create users with different roles
+        manager = User(username="filtermanager", email="filtermgr@test.com", role="manager", is_approved=True)
+        manager.set_password("Test@123")
+        employee = User(username="filteremployee", email="filteremp@test.com", role="employee", is_approved=True)
+        employee.set_password("Test@123")
+        db_session.add_all([manager, employee])
+        db_session.commit()
+
+        # Login as admin
+        client.post("/auth/login", data={
+            "email": admin_user.email,
+            "password": "Admin@123",
+        }, follow_redirects=True)
+
+        # Test without filters
+        response = client.get("/admin/users")
+        assert response.status_code == 200
+
+        # Test with role filter
+        response = client.get("/admin/users?role_filter=manager")
+        assert response.status_code == 200
+
+        # Test with per_page
+        response = client.get("/admin/users?per_page=20")
+        assert response.status_code == 200
+
+        # Test with combined filters
+        response = client.get("/admin/users?role_filter=employee&per_page=10")
+        assert response.status_code == 200
+
+    def test_manage_users_status_filter_integration(self, client, db_session, admin_user):
+        """Test status filtering works correctly."""
+        # Create approved and pending users
+        for i in range(5):
+            approved = User(
+                username=f"approved{i}",
+                email=f"approved{i}@test.com",
+                role="employee",
+                is_approved=True,
+            )
+            approved.set_password("Test@123")
+            db_session.add(approved)
+
+            pending = User(
+                username=f"pending{i}",
+                email=f"pending{i}@test.com",
+                role="employee",
+                is_approved=False,
+            )
+            pending.set_password("Test@123")
+            db_session.add(pending)
+        db_session.commit()
+
+        # Login as admin
+        client.post("/auth/login", data={
+            "email": admin_user.email,
+            "password": "Admin@123",
+        }, follow_redirects=True)
+
+        # Test page loads with status filter
+        response = client.get("/admin/users")
+        assert response.status_code == 200
+        assert b"status-filter" in response.data or b"Status" in response.data
+        
+        # Test filtering by approved
+        response = client.get("/admin/users?status_filter=approved")
+        assert response.status_code == 200
+        assert b"approved0" in response.data
+        assert b"pending0" not in response.data
+
+        # Test filtering by pending
+        response = client.get("/admin/users?status_filter=pending")
+        assert response.status_code == 200
+        assert b"pending0" in response.data
+        assert b"approved0" not in response.data
+
+    def test_manage_users_pagination_integration(self, client, db_session, admin_user):
+        """Test pagination works correctly with multiple users."""
+        # Create 15 users
+        for i in range(15):
+            user = User(
+                username=f"pageuser{i}",
+                email=f"pageuser{i}@test.com",
+                role="employee",
+                is_approved=True,
+            )
+            user.set_password("Test@123")
+            db_session.add(user)
+        db_session.commit()
+
+        # Login as admin
+        client.post("/auth/login", data={
+            "email": admin_user.email,
+            "password": "Admin@123",
+        }, follow_redirects=True)
+
+        # Test first page
+        response = client.get("/admin/users?per_page=10&page=1")
+        assert response.status_code == 200
+
+        # Test second page
+        response = client.get("/admin/users?per_page=10&page=2")
+        assert response.status_code == 200
+
+    def test_export_users_integration(self, client, db_session, admin_user, employee_user):
+        """Test user export functionality."""
+        # Login as admin
+        client.post("/auth/login", data={
+            "email": admin_user.email,
+            "password": "Admin@123",
+        }, follow_redirects=True)
+
+        # Test export
+        response = client.get("/admin/users/export")
+        assert response.status_code == 200
+        assert response.content_type == "text/csv; charset=utf-8"
+        response.get_data()
+
+        # Test export with role filter
+        response = client.get("/admin/users/export?role_filter=employee")
+        assert response.status_code == 200
+        response.get_data()
+
+        # Test export with status filter
+        response = client.get("/admin/users/export?status_filter=pending")
+        assert response.status_code == 200
+        response.get_data()
+        
+        response = client.get("/admin/users/export?status_filter=approved")
+        assert response.status_code == 200
+        response.get_data()
