@@ -18,6 +18,7 @@ Example:
 
 import click
 import random
+from datetime import date, timedelta
 from flask.cli import with_appcontext
 
 
@@ -70,6 +71,10 @@ def seed_users(number: int, approved: bool, role: str):
     try:
         db.session.commit()
         click.echo(click.style(f"Successfully added {created} fake users.", fg="green"))
+
+        # Store created users for skills seeding
+        users = User.query.filter(User.email !=  "admin@hiresense.local").all()
+
     except Exception as e:
         db.session.rollback()
         click.echo(click.style(f"Error: {str(e)}", fg="red"))
@@ -77,13 +82,94 @@ def seed_users(number: int, approved: bool, role: str):
     if skipped:
         click.echo(click.style(f"Skipped {skipped} users (duplicate emails).", fg="yellow"))
 
+    # Seed user skills for employees
+    if role in ["employee", "mixed"]:
+        from app.models import Skill, UserSkill
+
+        click.echo("\n" + click.style("Seeding skills for employees...", fg="cyan", bold=True))
+        employees = [u for u in users if u.role == "employee"]
+        all_skills = Skill.query.all()
+
+        if all_skills:
+            try:
+                skills_count = _seed_user_skills(employees, all_skills)
+                db.session.commit()
+
+                click.echo(click.style(f"✓ Successfully added {skills_count} user skills!", fg="green"))
+
+                # Skills statistics
+                verified_count = UserSkill.query.filter_by(is_verified=True).count()
+                avg_skills = skills_count / len(employees) if employees else 0
+
+                click.echo("\n" + click.style("Skills Summary:", fg="cyan", bold=True))
+                click.echo(f"  - Total user skills: {skills_count}")
+                click.echo(f"  - Average skills per employee: {avg_skills:.1f}")
+                click.echo(f"  - Verified skills: {verified_count} ({verified_count*100//skills_count if skills_count else 0}%)")
+            except Exception as e:
+                db.session.rollback()
+                click.echo(click.style(f"⚠️  Error seeding skills: {str(e)}", fg="yellow"))
+        else:
+            click.echo(click.style("⚠️  No skills in database. Run 'flask seed-data' first.", fg="yellow"))
+
     # Show summary
-    click.echo("\nUser Summary:")
+    click.echo("\n" + click.style("User Summary:", fg="cyan", bold=True))
     click.echo(f"  - Total users in DB: {User.query.count()}")
     click.echo(f"  - Approved: {User.query.filter_by(is_approved=True).count()}")
     click.echo(f"  - Pending: {User.query.filter_by(is_approved=False).count()}")
     click.echo(f"  - Managers: {User.query.filter_by(role='manager').count()}")
     click.echo(f"  - Employees: {User.query.filter_by(role='employee').count()}")
+
+
+def _seed_user_skills(employees, skills):
+    """Seed skills for employees with realistic proficiency levels."""
+    from faker import Faker
+    from app import db
+    from app.models import UserSkill
+
+    fake = Faker()
+
+    if not skills:
+        click.echo(click.style("⚠️  No skills found. Skipping user skills.", fg="yellow"))
+        return 0
+
+    user_skills_created = 0
+
+    for employee in employees:
+        # 3-7 skills per employee
+        num_skills = random.randint(3, 7)
+        selected_skills = random.sample(skills, min(num_skills, len(skills)))
+
+        for skill in selected_skills:
+            # Weighted proficiency (bell curve)
+            proficiency = random.choices([1, 2, 3, 4, 5], weights=[10, 20, 40, 20, 10])[0]
+
+            # 30% chance of verified
+            is_verified = random.random() < 0.3
+
+            # acquired_date: within past 2 years
+            acquired_date = fake.date_between(
+                start_date=date.today() - timedelta(days=730),
+                end_date=date.today()
+            )
+
+            # last_used_date: within past 6 months (after acquired_date)
+            last_used_date = fake.date_between(
+                start_date=max(acquired_date, date.today() - timedelta(days=180)),
+                end_date=date.today()
+            )
+
+            user_skill = UserSkill(
+                user_id=employee.id,
+                skill_id=skill.id,
+                proficiency_level=proficiency,
+                is_verified=is_verified,
+                acquired_date=acquired_date,
+                last_used_date=last_used_date
+            )
+            db.session.add(user_skill)
+            user_skills_created += 1
+
+    return user_skills_created
 
 
 @click.command("seed-data")

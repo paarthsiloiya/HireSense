@@ -1,79 +1,433 @@
 {% extends "employee/employee_base.html" %}
 {% block title %} – My Skills{% endblock %}
 
+{% block breadcrumb %}
+<span class="text-text-light font-bold"></span>
+<span class="font-bold text-text-main">My Skills</span>
+{% endblock %}
+
 {% block employee_content %}
-<h1>My Skills</h1>
+<div class="px-8 max-w-7xl mx-auto space-y-8 pb-12">
+    <!-- Hero Action Bar -->
+    <section class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div class="space-y-3">
+            <div>
+                <div class="flex items-center gap-3 mb-1">
+                    <span class="text-text-muted text-sm font-medium">Architecture & Engineering Mastery</span>
+                </div>
+                <h2 class="text-4xl font-extrabold text-text-main tracking-tight">Skill Inventory</h2>
+            </div>
+        </div>
+        <div class="flex gap-3">
+            <button onclick="document.getElementById('addSkillModal').classList.remove('hidden')"
+                class="px-6 py-2.5 bg-primary-600 text-text-inverse font-semibold rounded-lg shadow-sm hover:bg-primary-700 transition-all hover:-translate-y-0.5 duration-200 flex items-center gap-2">
+                <span class="material-symbols-outlined text-lg">add_circle</span>
+                Add New Skill
+            </button>
+        </div>
+    </section>
 
-<h2>Current Skills ({{ skills|length }})</h2>
-{% if skills %}
-<table border="1" cellpadding="8" style="width: 100%;">
-    <tr>
-        <th>Skill</th>
-        <th>Category</th>
-        <th>Proficiency</th>
-        <th>Verified</th>
-        <th>Actions</th>
-    </tr>
-    {% for skill in skills %}
-    <tr>
-        <td>{{ skill.skill_name }}</td>
-        <td>{{ skill.category or '-' }}</td>
-        <td>
-            <form method="POST" action="{{ url_for('employee.update_skill') }}" style="display: inline;">
-                <input type="hidden" name="skill_id" value="{{ skill.skill_id }}">
-                <select name="proficiency_level" onchange="this.form.submit()">
-                    {% for i in range(1, 6) %}
-                    <option value="{{ i }}" {{ 'selected' if skill.proficiency_level==i else '' }}>{{ i }}/5</option>
-                    {% endfor %}
-                </select>
+    <!-- Stats Overview -->
+    {% set total_skills = skills|length %}
+    {% set verified_skills = skills|selectattr('is_verified', 'equalto', True)|list|length %}
+    {% set pending_skills = total_skills - verified_skills %}
+    {% set avg_proficiency = (skills | map(attribute='proficiency_level') | sum / total_skills) if total_skills > 0 else
+    0 %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div
+            class="p-6 rounded-xl bg-surface shadow-sm border border-border-main hover:shadow-md transition-shadow duration-200">
+            <div class="flex flex-col justify-between h-full space-y-4">
+                <div class="flex items-center gap-2 mb-2 text-text-muted">
+                    <span class="material-symbols-outlined text-lg">psychology</span>
+                    <h3 class="text-sm font-bold uppercase tracking-wider">Total Skills</h3>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-3xl font-extrabold text-text-main">{{ total_skills }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div
+            class="p-6 rounded-xl bg-surface shadow-sm border border-border-main hover:shadow-md transition-shadow duration-200">
+            <div class="flex flex-col justify-between h-full space-y-4">
+                <div class="flex items-center gap-2 mb-2 text-success-600">
+                    <span class="material-symbols-outlined text-lg"
+                        style="font-variation-settings: 'FILL' 1;">verified</span>
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-text-muted">Verified</h3>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-3xl font-extrabold text-text-main">{{ verified_skills }}</span>
+                    {% if total_skills > 0 %}
+                    <span class="text-text-muted text-xs font-medium">{{ ((verified_skills / total_skills) *
+                        100)|round|int }}% coverage</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div
+            class="p-6 rounded-xl bg-surface shadow-sm border border-border-main hover:shadow-md transition-shadow duration-200">
+            <div class="flex flex-col justify-between h-full space-y-4">
+                <div class="flex items-center gap-2 mb-2 text-info-600">
+                    <span class="material-symbols-outlined text-lg">analytics</span>
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-text-muted">Avg. Proficiency</h3>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-3xl font-extrabold text-text-main">{{ "%.1f"|format(avg_proficiency) }}</span>
+                    <span class="text-text-muted text-xs font-bold">/ 5.0</span>
+                </div>
+            </div>
+        </div>
+
+        <div
+            class="p-6 rounded-xl bg-surface shadow-sm border border-border-main hover:shadow-md transition-shadow duration-200">
+            <div class="flex flex-col justify-between h-full space-y-4">
+                <div class="flex items-center gap-2 mb-2 text-warning-600">
+                    <span class="material-symbols-outlined text-lg">pending_actions</span>
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-text-muted">Pending</h3>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-3xl font-extrabold text-text-main">{{ pending_skills }}</span>
+                    <span class="text-text-muted text-xs font-bold">Needs Action</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Skills Table Container -->
+    <section class="space-y-4">
+        <div class="flex items-center gap-2 text-primary-600">
+            <span class="material-symbols-outlined text-xl">view_list</span>
+            <h3 class="text-xl font-bold text-text-main">Skill Details</h3>
+        </div>
+
+        <div class="overflow-hidden rounded-xl bg-surface border border-border-main shadow-sm">
+            {% set category_list = skills | map(attribute='category') | reject('none') | unique | list %}
+            <div
+                class="p-4 flex flex-wrap items-center justify-between border-b border-border-main gap-4 bg-background/50">
+                <div class="relative w-full max-w-sm">
+                    <span
+                        class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-[18px]">search</span>
+                    <input id="searchInput"
+                        class="w-full pl-9 pr-4 py-2 bg-surface border border-border-main rounded-lg text-sm text-text-main focus:ring-2 focus:ring-primary-500/20 transition-all focus:outline-none placeholder-text-muted"
+                        placeholder="Search skills by name..." type="text" />
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-xs font-bold text-text-muted uppercase tracking-wide">Filter:</span>
+                    <select id="categoryFilter"
+                        class="py-2 pl-3 pr-8 bg-surface border border-border-main rounded-lg text-sm text-text-main font-medium focus:outline-none focus:ring-2 focus:ring-primary-500/20 cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width=%2220%22%20height=%2220%22%20xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cpath%20d=%22M7%2010l5%205%205-5z%22%20fill=%22%236b7280%22/%3E%3C/svg%3E')] bg-[position:95%_center] bg-no-repeat">
+                        <option value="">All Categories</option>
+                        {% for cat in category_list %}
+                        <option value="{{ cat|lower }}">{{ cat }}</option>
+                        {% endfor %}
+                        <option value="uncategorized">Uncategorized</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-background border-b border-border-main">
+                            <th class="px-6 py-4 text-[0.75rem] font-bold uppercase tracking-wider text-text-muted">
+                                Skill Name</th>
+                            <th class="px-6 py-4 text-[0.75rem] font-bold uppercase tracking-wider text-text-muted">
+                                Category</th>
+                            <th class="px-6 py-4 text-[0.75rem] font-bold uppercase tracking-wider text-text-muted">
+                                Proficiency</th>
+                            <th class="px-6 py-4 text-[0.75rem] font-bold uppercase tracking-wider text-text-muted">
+                                Status</th>
+                            <th
+                                class="px-6 py-4 text-[0.75rem] font-bold uppercase tracking-wider text-text-muted text-right">
+                                Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="skillsTableBody" class="divide-y divide-border-main/50">
+                        {% for skill in skills %}
+                        <tr class="skill-row hover:bg-background/50 transition-colors group cursor-default"
+                            data-skill-name="{{ skill.skill_name|lower }}"
+                            data-skill-category="{{ skill.category|lower if skill.category else 'uncategorized' }}">
+                            <td class="px-6 py-3.5">
+                                <span class="text-text-main font-bold text-sm">{{ skill.skill_name }}</span>
+                            </td>
+                            <td class="px-6 py-3.5 text-text-muted text-sm">
+                                {{ skill.category or 'Uncategorized' }}
+                            </td>
+                            <td class="px-6 py-3.5">
+                                <div class="flex items-center gap-3">
+                                    <div class="flex justify-center gap-1">
+                                        {% for i in range(1, 6) %}
+                                        <span
+                                            class="w-2.5 h-2.5 rounded-full {{ 'bg-primary-600' if i <= skill.proficiency_level else 'bg-border-main' }}"></span>
+                                        {% endfor %}
+                                    </div>
+                                    <form method="POST" action="{{ url_for('employee.update_skill') }}"
+                                        class="inline-block relative">
+                                        <input type="hidden" name="skill_id" value="{{ skill.skill_id }}">
+                                        <select name="proficiency_level" onchange="this.form.submit()"
+                                            class="appearance-none font-bold text-[11px] text-text-muted hover:text-primary-600 bg-transparent border border-transparent hover:border-border-main hover:bg-surface rounded px-1.5 py-0.5 cursor-pointer focus:outline-none transition-colors">
+                                            {% for i in range(1, 6) %}
+                                            <option value="{{ i }}" {{ 'selected' if skill.proficiency_level==i else ''
+                                                }}>{{ i }}/5</option>
+                                            {% endfor %}
+                                        </select>
+                                    </form>
+                                </div>
+                            </td>
+                            <td class="px-6 py-3.5">
+                                {% if skill.is_verified %}
+                                <span
+                                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold text-success-700 bg-success-50 border border-success-200">
+                                    <span class="material-symbols-outlined text-[14px]"
+                                        style="font-variation-settings: 'FILL' 1;">verified</span>
+                                    Verified
+                                </span>
+                                {% else %}
+                                <span
+                                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold text-warning-700 bg-background border border-border-main shadow-sm">
+                                    <span class="material-symbols-outlined text-[14px]">pending_actions</span>
+                                    Pending
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-3.5 text-right">
+                                <form method="POST" action="{{ url_for('employee.remove_skill') }}" class="inline-block"
+                                    onsubmit="return confirm('Remove {{ skill.skill_name }} skill?');">
+                                    <input type="hidden" name="skill_id" value="{{ skill.skill_id }}">
+                                    <button type="submit"
+                                        class="p-1 text-text-light hover:text-error-600 hover:bg-error-50 rounded transition-all"
+                                        title="Remove Skill">
+                                        <span class="material-symbols-outlined text-[18px]">delete</span>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="px-6 py-10 text-center text-text-muted">
+                                <div class="flex flex-col items-center justify-center">
+                                    <span
+                                        class="material-symbols-outlined text-4xl text-border-main mb-2">psychology_alt</span>
+                                    <p class="text-sm font-medium text-text-main">No skills added yet.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if skills %}
+            <div class="px-6 py-3 bg-background/50 border-t border-border-main flex items-center justify-between">
+                <p id="skillCountDisplay" class="text-xs text-text-muted font-medium">Showing {{ skills|length }} skills
+                </p>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Learning Recommendation Sidebar -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-4">
+            <div class="flex items-center gap-2 text-primary-600">
+                <span class="material-symbols-outlined text-xl">bar_chart</span>
+                <h3 class="text-xl font-bold text-text-main">Skill Distribution</h3>
+            </div>
+            <div
+                class="p-6 rounded-xl bg-surface border border-border-main shadow-sm flex flex-col justify-center gap-8 h-[240px]">
+
+                <div class="group cursor-default">
+                    <div class="flex justify-between items-end mb-2">
+                        <span
+                            class="text-sm font-bold text-text-main group-hover:text-primary-600 transition-colors">Technical
+                            Mastery</span>
+                        <span class="text-sm font-extrabold text-text-main">75%</span>
+                    </div>
+                    <div class="w-full bg-background border border-border-main rounded-full h-2.5 overflow-hidden">
+                        <div class="bg-primary-600 h-full rounded-full w-0 transition-all duration-1000 ease-out"
+                            style="width: 75%"></div>
+                    </div>
+                </div>
+
+                <div class="group cursor-default">
+                    <div class="flex justify-between items-end mb-2">
+                        <span
+                            class="text-sm font-bold text-text-main group-hover:text-primary-600 transition-colors">Leadership</span>
+                        <span class="text-sm font-extrabold text-text-main">40%</span>
+                    </div>
+                    <div class="w-full bg-background border border-border-main rounded-full h-2.5 overflow-hidden">
+                        <div class="bg-primary-500 h-full rounded-full w-0 transition-all duration-1000 ease-out delay-100"
+                            style="width: 40%"></div>
+                    </div>
+                </div>
+
+                <div class="group cursor-default">
+                    <div class="flex justify-between items-end mb-2">
+                        <span
+                            class="text-sm font-bold text-text-main group-hover:text-primary-600 transition-colors">Architecture</span>
+                        <span class="text-sm font-extrabold text-text-main">60%</span>
+                    </div>
+                    <div class="w-full bg-background border border-border-main rounded-full h-2.5 overflow-hidden">
+                        <div class="bg-primary-700 h-full rounded-full w-0 transition-all duration-1000 ease-out delay-200"
+                            style="width: 60%"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="lg:col-span-1 space-y-4">
+            <div class="flex items-center gap-2 text-primary-600">
+                <span class="material-symbols-outlined text-xl">lightbulb</span>
+                <h3 class="text-xl font-bold text-text-main">Recommended for You</h3>
+            </div>
+            <div
+                class="bg-primary-50 border border-primary-200 p-6 rounded-xl relative overflow-hidden group hover:bg-primary-100 transition-colors h-[240px] flex flex-col justify-center">
+                <div class="relative z-10">
+                    <span
+                        class="px-2 py-1 bg-white border border-primary-200 text-primary-700 rounded text-[10px] font-bold uppercase tracking-widest mb-3 inline-block shadow-sm">Trending</span>
+                    <h4 class="text-lg font-bold text-text-main mb-2">Kubernetes Orchestration</h4>
+                    <p class="text-text-muted text-xs mb-6 leading-relaxed">Top-rated path for your role. 8 coworkers
+                        have completed this.</p>
+                    <button
+                        class="w-full py-2 bg-primary-600 text-white rounded-lg font-bold text-sm hover:bg-primary-700 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2">Explore
+                        Path</button>
+                </div>
+                <span
+                    class="material-symbols-outlined absolute -right-6 -bottom-6 text-primary-200 text-[160px] group-hover:scale-110 transition-transform duration-500 pointer-events-none opacity-50">school</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Skill Modal -->
+<div id="addSkillModal"
+    class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center transition-opacity">
+    <div class="bg-surface rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden border border-border-main">
+        <div class="p-5 border-b border-border-main flex items-center justify-between bg-background/50">
+            <h3 class="text-lg font-bold text-text-main flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary-600">psychology</span>
+                Add New Skill
+            </h3>
+            <button onclick="document.getElementById('addSkillModal').classList.add('hidden')"
+                class="text-text-muted hover:text-text-main transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-border-main/50">
+                <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+        </div>
+
+        <div class="p-6">
+            {% if available_skills %}
+            <form method="POST" action="{{ url_for('employee.add_skill') }}" class="space-y-4">
+                <div>
+                    <label for="skill_id"
+                        class="block text-xs font-bold text-text-muted uppercase tracking-wider mb-1.5">Select
+                        Skill</label>
+                    <div class="relative">
+                        <select id="skill_id" name="skill_id" required
+                            class="w-full pl-3 pr-10 py-2.5 bg-background border border-border-main rounded-lg text-sm text-text-main focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all appearance-none cursor-pointer font-medium">
+                            <option value="">-- Choose from available skills --</option>
+                            {% for skill in available_skills %}
+                            <option value="{{ skill.id }}">{{ skill.name }} ({{ skill.category or 'Uncategorized' }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <span
+                            class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">expand_more</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="proficiency_level"
+                        class="block text-xs font-bold text-text-muted uppercase tracking-wider mb-1.5">Proficiency
+                        Level</label>
+                    <div class="relative">
+                        <select id="proficiency_level" name="proficiency_level" required
+                            class="w-full pl-3 pr-10 py-2.5 bg-background border border-border-main rounded-lg text-sm text-text-main focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all appearance-none cursor-pointer font-medium">
+                            <option value="1">1 - Beginner</option>
+                            <option value="2">2 - Basic</option>
+                            <option value="3" selected>3 - Intermediate</option>
+                            <option value="4">4 - Advanced</option>
+                            <option value="5">5 - Expert</option>
+                        </select>
+                        <span
+                            class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">expand_more</span>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex gap-3 pt-2">
+                    <button type="button" onclick="document.getElementById('addSkillModal').classList.add('hidden')"
+                        class="flex-1 py-2.5 px-4 bg-surface border border-border-main text-text-main rounded-lg font-semibold hover:bg-background transition-colors text-sm">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="flex-1 py-2.5 px-4 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 shadow-sm transition-transform hover:-translate-y-0.5 duration-200 text-sm">
+                        Save Skill
+                    </button>
+                </div>
             </form>
-        </td>
-        <td>{{ 'Yes' if skill.is_verified else 'No' }}</td>
-        <td>
-            <form method="POST" action="{{ url_for('employee.remove_skill') }}" style="display: inline;">
-                <input type="hidden" name="skill_id" value="{{ skill.skill_id }}">
-                <button type="submit" onclick="return confirm('Remove this skill?');">Remove</button>
-            </form>
-        </td>
-    </tr>
-    {% endfor %}
-</table>
-{% else %}
-<p>No skills added yet.</p>
-{% endif %}
+            {% else %}
+            <div class="text-center py-6">
+                <div
+                    class="w-14 h-14 bg-success-50 text-success-600 rounded-full flex items-center justify-center mx-auto mb-3 border border-success-200">
+                    <span class="material-symbols-outlined text-[28px]">task_alt</span>
+                </div>
+                <h4 class="text-base font-bold text-text-main mb-1">All Caught Up!</h4>
+                <p class="text-text-muted text-sm">You have added all available skills to your profile.</p>
+                <div class="mt-6 pt-2">
+                    <button type="button" onclick="document.getElementById('addSkillModal').classList.add('hidden')"
+                        class="w-full py-2.5 px-4 bg-surface border border-border-main text-text-main rounded-lg font-semibold hover:bg-background transition-colors text-sm">
+                        Close
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
 
-<h2>Add New Skill</h2>
-{% if available_skills %}
-<form method="POST" action="{{ url_for('employee.add_skill') }}">
-    <p>
-        <label for="skill_id"><strong>Skill:</strong></label><br>
-        <select id="skill_id" name="skill_id" required style="padding: 8px;">
-            <option value="">-- Select a skill --</option>
-            {% for skill in available_skills %}
-            <option value="{{ skill.id }}">{{ skill.name }} ({{ skill.category or 'uncategorized' }})</option>
-            {% endfor %}
-        </select>
-    </p>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        // Search and Filter Functionality
+        const searchInput = document.getElementById('searchInput');
+        const categoryFilter = document.getElementById('categoryFilter');
+        const rows = document.querySelectorAll('.skill-row');
+        const countDisplay = document.getElementById('skillCountDisplay');
 
-    <p>
-        <label for="proficiency_level"><strong>Proficiency Level:</strong></label><br>
-        <select id="proficiency_level" name="proficiency_level" style="padding: 8px;">
-            <option value="1">1 - Beginner</option>
-            <option value="2">2 - Basic</option>
-            <option value="3" selected>3 - Intermediate</option>
-            <option value="4">4 - Advanced</option>
-            <option value="5">5 - Expert</option>
-        </select>
-    </p>
+        function filterSkills() {
+            if (!searchInput || !categoryFilter) return;
 
-    <p>
-        <button type="submit"
-            style="padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer;">
-            Add Skill
-        </button>
-    </p>
-</form>
-{% else %}
-<p>All available skills have been added to your profile.</p>
-{% endif %}
+            const query = searchInput.value.toLowerCase().trim();
+            const category = categoryFilter.value.toLowerCase();
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const name = row.getAttribute('data-skill-name') || "";
+                const cat = row.getAttribute('data-skill-category') || "";
+
+                const matchesSearch = query === "" || name.includes(query);
+                const matchesCat = category === "" || cat === category;
+
+                if (matchesSearch && matchesCat) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            if (countDisplay) {
+                countDisplay.innerHTML = `Showing <span class="font-bold text-text-main">${visibleCount}</span> skills`;
+            }
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener('input', filterSkills);
+        }
+        if (categoryFilter) {
+            categoryFilter.addEventListener('change', filterSkills);
+        }
+    });
+</script>
+
 {% endblock %}

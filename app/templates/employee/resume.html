@@ -2,62 +2,71 @@
 {% block title %} – My Resume{% endblock %}
 
 {% block employee_content %}
-<h1>My Resume</h1>
+<div class="px-8 max-w-5xl mx-auto w-full">
+    <header class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+        <div class="space-y-1">
+            <h1 class="text-4xl font-extrabold text-primary-950 tracking-tight font-headline">My Resume</h1>
+            <p class="text-text-muted text-sm">Manage your career history and uploaded files.</p>
+        </div>
+        {% if resume %}
+        <div class="flex gap-3">
+            <a href="{{ url_for('employee.upload_resume') }}"
+                class="px-6 py-2.5 bg-background border border-border-main text-text-main rounded-lg font-bold text-sm shadow-sm hover:bg-surface-high transition-all flex items-center gap-2">
+                <span class="material-symbols-outlined text-lg">update</span>
+                Update Resume
+            </a>
+            <a href="{{ url_for('employee.download_resume') }}"
+                class="px-6 py-2.5 bg-primary-600 text-white rounded-lg font-bold text-sm shadow-md hover:bg-primary-700 transition-all flex items-center gap-2">
+                <span class="material-symbols-outlined text-lg">download</span>
+                Download
+            </a>
+        </div>
+        {% endif %}
+    </header>
 
-{% if resume %}
-<h2>Current Resume</h2>
-<table border="1" cellpadding="8">
-    <tr>
-        <td><strong>File Name</strong></td>
-        <td>{{ resume.original_filename or 'Resume' }}</td>
-    </tr>
-    <tr>
-        <td><strong>Last Updated</strong></td>
-        <td>{{ resume.last_updated.strftime('%Y-%m-%d %H:%M') if resume.last_updated else '-' }}</td>
-    </tr>
-</table>
+    {% if resume %}
+    <div class="bg-surface rounded-xl shadow-sm border border-border-main/50 p-8">
+        <h2 class="text-xl font-bold text-text-main mb-6">Current Resume Details</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="p-4 bg-background rounded-lg border border-border-main/30">
+                <p class="text-xs text-text-muted font-bold uppercase tracking-wider mb-1">File Name</p>
+                <p class="text-text-main font-medium truncate" title="{{ resume.original_filename or 'Resume' }}">{{
+                    resume.original_filename or 'Resume' }}</p>
+            </div>
+            <div class="p-4 bg-background rounded-lg border border-border-main/30">
+                <p class="text-xs text-text-muted font-bold uppercase tracking-wider mb-1">Last Updated</p>
+                <p class="text-text-main font-medium">{{ resume.last_updated.strftime('%Y-%m-%d %H:%M') if
+                    resume.last_updated else '-' }}</p>
+            </div>
+        </div>
 
-<p>
-    <a href="{{ url_for('employee.download_resume') }}"
-        style="padding: 8px 16px; background: #007bff; color: white; text-decoration: none;">Download</a>
-</p>
+        <div class="mt-8 pt-6 border-t border-border-main/50 flex justify-end">
+            <form method="POST" action="{{ url_for('employee.delete_resume') }}"
+                onsubmit="return confirm('Are you sure you want to delete your resume?');">
+                <button type="submit"
+                    class="px-5 py-2.5 bg-danger-50 text-danger-800 hover:bg-danger-200 border border-danger-200 rounded-lg font-bold text-sm transition-all flex items-center gap-2">
+                    <span class="material-symbols-outlined text-lg">delete</span>
+                    Delete Resume
+                </button>
+            </form>
+        </div>
+    </div>
+    {% else %}
+    <div
+        class="bg-surface rounded-xl shadow-sm border border-border-main/50 p-12 text-center flex flex-col items-center justify-center min-h-[300px]">
+        <div class="w-20 h-20 bg-primary-50 rounded-full flex items-center justify-center mb-6">
+            <span class="material-symbols-outlined text-primary-600 text-4xl">description</span>
+        </div>
+        <h2 class="text-2xl font-bold text-text-main mb-3">No Resume Found</h2>
+        <p class="text-text-muted mb-8 max-w-md">You haven't uploaded a resume yet. Upload your resume to have our AI
+            extract your details and match you with better opportunities.</p>
 
-<h2>Update Resume</h2>
-<form method="POST" action="{{ url_for('employee.upload_resume') }}" enctype="multipart/form-data">
-    <p>
-        <input type="file" name="resume_file" accept=".pdf,.doc,.docx" required>
-    </p>
-    <p>
-        <button type="submit"
-            style="padding: 10px 20px; background: #28a745; color: white; border: none; cursor: pointer;">
-            Upload New Resume
-        </button>
-    </p>
-</form>
-
-<h2>Delete Resume</h2>
-<form method="POST" action="{{ url_for('employee.delete_resume') }}"
-    onsubmit="return confirm('Are you sure you want to delete your resume?');">
-    <button type="submit" style="padding: 10px 20px; background: #dc3545; color: white; border: none; cursor: pointer;">
-        Delete Resume
-    </button>
-</form>
-
-{% else %}
-<h2>Upload Resume</h2>
-<p>You haven't uploaded a resume yet.</p>
-<form method="POST" action="{{ url_for('employee.upload_resume') }}" enctype="multipart/form-data">
-    <p>
-        <label for="resume_file"><strong>Select file:</strong></label><br>
-        <input type="file" id="resume_file" name="resume_file" accept=".pdf,.doc,.docx" required>
-    </p>
-    <p><small>Allowed formats: PDF, DOC, DOCX</small></p>
-    <p>
-        <button type="submit"
-            style="padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer;">
+        <a href="{{ url_for('employee.upload_resume') }}"
+            class="px-8 py-3.5 bg-primary-600 text-white rounded-lg font-bold text-sm shadow-md shadow-primary-900/10 hover:bg-primary-700 hover:shadow-primary-900/20 transition-all flex items-center gap-2">
+            <span class="material-symbols-outlined text-lg">upload_file</span>
             Upload Resume
-        </button>
-    </p>
-</form>
-{% endif %}
+        </a>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}

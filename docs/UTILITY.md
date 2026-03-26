@@ -6,12 +6,23 @@ This document describes the utility scripts available in the `utility/` folder a
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Available Commands](#available-commands)
-  - [seed-users](#seed-users)
-  - [seed-data](#seed-data)
-- [Usage](#usage)
-- [Adding New Utilities](#adding-new-utilities)
+- [Utility Scripts](#utility-scripts)
+  - [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
+  - [Available Commands](#available-commands)
+    - [seed-users](#seed-users)
+    - [seed-data](#seed-data)
+    - [seed-projects](#seed-projects)
+    - [clear-db](#clear-db)
+  - [Usage](#usage)
+    - [Docker Environment](#docker-environment)
+    - [Local Virtual Environment](#local-virtual-environment)
+  - [Adding New Utilities](#adding-new-utilities)
+  - [Troubleshooting](#troubleshooting)
+    - [Command Not Found](#command-not-found)
+    - [Database Connection Error](#database-connection-error)
+    - [Import Error](#import-error)
+  - [See Also](#see-also)
 
 ---
 
@@ -96,9 +107,10 @@ User Summary:
 
 **Notes:**
 
-- Users are created with realistic names and email addresses using the Faker library
-- Duplicate emails are automatically skipped
-- All users are created as active (not blacklisted)
+- Users are created with realistic names, emails, and secure password hashes (`password123` by default)
+- Duplicate emails are automatically skipped and reported in the "Skipped" summary
+- Employees receive 3–7 random skills each (when `--role` includes `employee`) using the existing skill catalog
+- Skill seeding reports verified totals and average skills per employee in the summary
 - The command uses your configured database from `.env` or environment variables
 
 ### seed-data
@@ -159,10 +171,83 @@ Seed data complete!
 
 **Notes:**
 
-- Requires existing users (run `flask seed-users` first)
-- Safe to run multiple times (skips existing data)
-- Projects are assigned to random approved managers
+- Requires approved managers and skills to exist before running (seed users/skills first)
+- Safe to rerun—existing departments, skills, and projects are re-used instead of duplicated
+- Sample projects receive random approved managers and matching skill requirements
+- `--full` adds additional user skill assignments (up to 20 employees) and project assignments for active projects
 
+### seed-projects
+
+Generate realistic projects with skill requirements and employee assignments.
+
+**File:** `utility/seed_projects.py`
+
+**Usage:**
+
+```bash
+# Default: Seed 20 projects
+flask seed-projects
+
+# Seed a specific number of projects
+flask seed-projects --count 50
+
+# Show help
+flask seed-projects --help
+```
+
+**Options:**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--count` | 20 | Number of projects to create |
+
+**What Gets Seeded:**
+
+- Projects with titles, descriptions, status, dates, and manager assignments
+- 3–8 random skill requirements per project with weighted proficiencies
+- 2–6 approved employees per project with contextual assignment statuses
+
+**Notes:**
+
+- Requires approved managers, employees, and skills (seed the users and data commands first)
+- Skills are sampled from the existing catalog and assignments respect employee availability
+- Command shows progress per project and concludes with counts by status, skills, and assignments
+
+### clear-db
+
+Safely clear all database tables while preserving the admin user.
+
+**File:** `utility/clear_db.py`
+
+**Usage:**
+
+```bash
+# Warning prompt; requires confirmation to proceed
+flask clear-db
+
+# Run with confirmation
+flask clear-db --confirm
+
+# Show help
+flask clear-db --help
+```
+
+**Options:**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--confirm` | No | Must be passed for deletion to run |
+
+**What Happens:**
+
+- Deletes notifications, project assignments/skills, user skills, learning paths, resumes, projects, users (excluding `admin@hiresense.local`), skills, and departments in that order
+- Commits after each step and reports the preserved admin user plus current counts
+- Rolls back on error to keep the database safe
+
+**Notes:**
+
+- Running without `--confirm` simply describes the warning and how to rerun with confirmation
+- Intended for development/testing environments only—use with caution in shared databases
 ---
 
 ## Usage

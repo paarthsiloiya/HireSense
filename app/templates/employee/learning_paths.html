@@ -2,60 +2,477 @@
 {% block title %} – Learning Paths{% endblock %}
 
 {% block employee_content %}
-<h1>My Learning Paths</h1>
+{% set active_paths = paths|selectattr('status', 'equalto', 'active')|list %}
+{% set completed_paths = paths|selectattr('status', 'equalto', 'completed')|list %}
 
-<h2>Generate New Learning Path</h2>
-<form method="POST" action="{{ url_for('employee.generate_learning_path') }}">
-    <p>
-        <label for="target_role"><strong>Target Role:</strong></label><br>
-        <select id="target_role" name="target_role" required style="padding: 8px;">
-            <option value="">-- Select target role --</option>
-            {% for role in available_roles %}
-            <option value="{{ role.id }}">{{ role.title }}</option>
-            {% endfor %}
-        </select>
-    </p>
-    <p>
-        <button type="submit"
-            style="padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer;">
-            Generate Learning Path
-        </button>
-    </p>
-</form>
+<div class="px-6 pb-12 max-w-7xl mx-auto">
+    <!-- Page Header -->
+    <section class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div class="flex-1 max-w-2xl">
+            <h2 class="text-3xl font-extrabold text-text-main tracking-tight mb-2">Learning Paths</h2>
+            <p class="text-text-muted text-sm">Track your career progression with personalized skill development
+                journeys tailored to your goals.</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <button id="openGenerateForm" class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-text-inverse
+                       font-semibold rounded-lg hover:bg-primary-700 transition-all duration-200
+                       hover:scale-105 active:scale-95 shadow-sm hover:shadow-md">
+                <span class="material-symbols-outlined text-[20px]">add</span>
+                Generate New Path
+            </button>
+        </div>
+    </section>
 
-<h2>My Learning Paths ({{ paths|length }})</h2>
-{% if paths %}
-<table border="1" cellpadding="8" style="width: 100%;">
-    <tr>
-        <th>Target Role</th>
-        <th>Status</th>
-        <th>Created</th>
-        <th>Actions</th>
-    </tr>
-    {% for path in paths %}
-    <tr>
-        <td>{{ path.target_role }}</td>
-        <td>{{ path.status }}</td>
-        <td>{{ path.created_at.strftime('%Y-%m-%d') }}</td>
-        <td>
-            <a href="{{ url_for('employee.view_learning_path', path_id=path.id) }}">View Details</a>
-            {% if path.status == 'active' %}
-            |
-            <form method="POST" action="{{ url_for('employee.complete_learning_path', path_id=path.id) }}"
-                style="display: inline;">
-                <button type="submit">Complete</button>
+    <!-- Generate Path Form (Hidden by default) -->
+    <div id="generateFormSection" class="hidden mb-8 transition-all duration-300">
+        <div class="bg-surface rounded-xl border border-border-main shadow-sm overflow-hidden">
+            <div class="px-6 py-4 bg-gradient-to-r from-primary-50 to-blue-50 border-b border-border-main
+                        flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-primary-600 text-[24px]">auto_awesome</span>
+                    <div>
+                        <h3 class="font-bold text-text-main">Generate New Learning Path</h3>
+                        <p class="text-xs text-text-muted">Select a target role to create a personalized learning
+                            journey</p>
+                    </div>
+                </div>
+                <button id="closeGenerateForm"
+                    class="p-1.5 rounded-lg hover:bg-white/50 text-text-muted hover:text-text-main transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <form method="POST" action="{{ url_for('employee.generate_learning_path') }}" class="p-6">
+                <div class="flex flex-col md:flex-row gap-4 items-end">
+                    <div class="flex-1">
+                        <label for="target_role" class="block text-sm font-medium text-text-main mb-2">
+                            Target Role
+                        </label>
+                        <select id="target_role" name="target_role" required class="w-full px-4 py-2.5 bg-background border border-border-main rounded-lg
+                                   text-sm focus:ring-2 focus:ring-primary-600/20 focus:border-primary-600
+                                   transition-all outline-none">
+                            <option value="">-- Select target role --</option>
+                            {% for role in available_roles %}
+                            <option value="{{ role.id }}">{{ role.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="inline-flex items-center gap-2 px-6 py-2.5 bg-primary-600 text-text-inverse
+                               font-semibold rounded-lg hover:bg-primary-700 transition-all duration-200
+                               hover:scale-105 active:scale-95 whitespace-nowrap">
+                        <span class="material-symbols-outlined text-[18px]">bolt</span>
+                        Generate Learning Path
+                    </button>
+                </div>
             </form>
-            |
-            <form method="POST" action="{{ url_for('employee.archive_learning_path', path_id=path.id) }}"
-                style="display: inline;">
-                <button type="submit">Archive</button>
-            </form>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <!-- Active Paths Card -->
+        <div class="bg-primary-600 p-6 rounded-xl flex flex-col justify-between min-h-[140px]
+                    shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5">
+            <div class="flex justify-between items-start">
+                <span class="material-symbols-outlined text-primary-200/50 text-3xl">route</span>
+                <span class="text-[10px] text-primary-200/60 uppercase font-black tracking-widest">In Progress</span>
+            </div>
+            <div>
+                <p class="text-text-inverse text-4xl font-bold tracking-tight">{{ active_paths|length }}</p>
+                <p class="text-primary-200/70 text-xs">Active Paths</p>
+            </div>
+        </div>
+
+        <!-- Completed Paths Card -->
+        <div class="bg-surface p-6 rounded-xl flex flex-col justify-between border border-border-main
+                    shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
+            <div class="flex justify-between items-start">
+                <span class="material-symbols-outlined text-text-light text-3xl">task_alt</span>
+                <span class="text-[10px] text-text-light uppercase font-black tracking-widest">Achieved</span>
+            </div>
+            <div>
+                <p class="text-text-main text-4xl font-bold tracking-tight">{{ completed_paths|length }}</p>
+                <p class="text-text-muted text-xs">Completed Paths</p>
+            </div>
+        </div>
+
+        <!-- Badges Card (Static) -->
+        <div class="bg-surface p-6 rounded-xl flex flex-col justify-between border border-border-main
+                    shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
+            <div class="flex justify-between items-start">
+                <span class="material-symbols-outlined text-text-light text-3xl">military_tech</span>
+                <span class="text-[10px] text-text-light uppercase font-black tracking-widest">Recognition</span>
+            </div>
+            <div>
+                <p class="text-text-main text-4xl font-bold tracking-tight">3</p>
+                <p class="text-text-muted text-xs">Badges Earned</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tab Navigation -->
+    <section class="mb-6">
+        <div class="flex items-center bg-background rounded-lg p-1 w-fit">
+            <button data-tab="active" class="tab-btn px-5 py-2 text-xs font-semibold rounded-md transition-all duration-200
+                       bg-surface text-text-main shadow-sm">
+                Active
+                <span class="ml-1.5 px-1.5 py-0.5 bg-primary-100 text-primary-700 rounded-full text-[10px]">
+                    {{ active_paths|length }}
+                </span>
+            </button>
+            <button data-tab="completed" class="tab-btn px-5 py-2 text-xs font-semibold rounded-md transition-all duration-200
+                       text-text-muted hover:text-primary-700">
+                Completed
+                <span class="ml-1.5 px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded-full text-[10px]">
+                    {{ completed_paths|length }}
+                </span>
+            </button>
+            <button data-tab="recommended" class="tab-btn px-5 py-2 text-xs font-semibold rounded-md transition-all duration-200
+                       text-text-muted hover:text-primary-700">
+                Recommended
+                <span class="ml-1.5 px-1.5 py-0.5 bg-blue-100 text-blue-600 rounded-full text-[10px]">
+                    {{ available_roles|length }}
+                </span>
+            </button>
+        </div>
+    </section>
+
+    <!-- Learning Paths Table -->
+    <div id="paths-table" class="tab-content">
+        <div class="bg-surface rounded-xl shadow-sm border border-border-main overflow-hidden">
+            {% if paths %}
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse text-left">
+                    <thead>
+                        <tr class="bg-background">
+                            <th class="px-6 py-3 text-[0.75rem] font-bold text-text-muted uppercase tracking-widest">
+                                Path / Target Role
+                            </th>
+                            <th
+                                class="px-6 py-3 text-[0.75rem] font-bold text-text-muted uppercase tracking-widest text-center">
+                                Assigned By
+                            </th>
+                            <th class="px-6 py-3 text-[0.75rem] font-bold text-text-muted uppercase tracking-widest">
+                                Progress
+                            </th>
+                            <th
+                                class="px-6 py-3 text-[0.75rem] font-bold text-text-muted uppercase tracking-widest text-center">
+                                Status
+                            </th>
+                            <th
+                                class="px-6 py-3 text-[0.75rem] font-bold text-text-muted uppercase tracking-widest text-center">
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-border-main">
+                        {% for path in paths %}
+                        <tr class="path-row hover:bg-background/50 transition-colors duration-150"
+                            data-status="{{ path.status }}">
+                            <!-- Path Title & Target Role -->
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="p-2 bg-primary-100 rounded-lg shrink-0">
+                                        <span
+                                            class="material-symbols-outlined text-primary-700 text-[20px]">school</span>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p class="font-bold text-text-main text-sm truncate">
+                                            {{ path.target_role|replace('_', ' ')|title }}
+                                        </p>
+                                        <p class="text-xs text-text-muted">
+                                            Created {{ path.created_at.strftime('%b %d, %Y') }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Assigned By (Identicon) -->
+                            <td class="px-6 py-4 text-center">
+                                <div class="flex items-center justify-center gap-2">
+                                    <div class="w-7 h-7 rounded-full bg-cover bg-center border-2 border-primary-200 shrink-0"
+                                        style="background-image: url('https://api.dicebear.com/9.x/identicon/svg?seed={{ current_user.username }}')">
+                                    </div>
+                                    <span class="text-sm text-text-muted">Self-Assigned</span>
+                                </div>
+                            </td>
+
+                            <!-- Progress Bar -->
+                            <td class="px-6 py-4">
+                                {% set progress = path_progress[path.id].percentage if path_progress and path.id in path_progress else (100 if path.status == 'completed' else 0) %}
+                                <div class="w-32">
+                                    <div class="flex justify-between items-center mb-1">
+                                        <span class="text-xs font-medium text-text-muted">Progress</span>
+                                        <span class="text-xs font-bold text-primary-700">{{ progress }}%</span>
+                                    </div>
+                                    <div class="w-full bg-background h-2 rounded-full overflow-hidden">
+                                        <div class="bg-primary-600 h-full transition-all duration-500"
+                                            style="width: {{ progress }}%"></div>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Status Badge -->
+                            <td class="px-6 py-4 text-center">
+                                {% if path.status == 'active' %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold
+                                             bg-primary-100 text-primary-700">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-primary-500 mr-2 animate-pulse"></span>
+                                    Active
+                                </span>
+                                {% elif path.status == 'completed' %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold
+                                             bg-success-50 text-success-800">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500 mr-2"></span>
+                                    Completed
+                                </span>
+                                {% else %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold
+                                             bg-gray-100 text-gray-600">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-gray-400 mr-2"></span>
+                                    Archived
+                                </span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Actions -->
+                            <td class="px-6 py-4 text-center">
+                                <div class="flex items-center justify-center gap-2">
+                                    <a href="{{ url_for('employee.view_learning_path', path_id=path.id) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-text-inverse
+                                              text-xs font-medium rounded-lg hover:bg-primary-700 transition-all duration-200
+                                              hover:scale-105 active:scale-95">
+                                        <span class="material-symbols-outlined text-[14px]">
+                                            {% if path.status == 'active' %}play_arrow{% else %}visibility{% endif %}
+                                        </span>
+                                        {% if path.status == 'active' %}Continue{% else %}View{% endif %}
+                                    </a>
+
+                                    {% if path.status == 'active' %}
+                                    <details class="relative dropdown-menu">
+                                        <summary class="p-1.5 rounded-lg border border-border-main text-text-muted
+                                                        hover:bg-background cursor-pointer transition-colors list-none
+                                                        flex items-center justify-center">
+                                            <span class="material-symbols-outlined text-[16px]">more_vert</span>
+                                        </summary>
+                                        <div class="absolute right-0 mt-1 w-40 bg-surface border border-border-main
+                                                    rounded-lg shadow-lg z-20 overflow-hidden">
+                                            <form method="POST"
+                                                action="{{ url_for('employee.complete_learning_path', path_id=path.id) }}">
+                                                <button type="submit"
+                                                    class="w-full px-4 py-2 text-left text-sm text-text-main
+                                                                             hover:bg-background transition-colors flex items-center gap-2">
+                                                    <span
+                                                        class="material-symbols-outlined text-[16px]">check_circle</span>
+                                                    Mark Complete
+                                                </button>
+                                            </form>
+                                            <form method="POST"
+                                                action="{{ url_for('employee.archive_learning_path', path_id=path.id) }}">
+                                                <button type="submit"
+                                                    class="w-full px-4 py-2 text-left text-sm text-text-muted
+                                                                             hover:bg-background transition-colors flex items-center gap-2">
+                                                    <span class="material-symbols-outlined text-[16px]">archive</span>
+                                                    Archive
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </details>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Table Footer -->
+            <div class="bg-background/30 px-6 py-4 flex items-center justify-between border-t border-border-main">
+                <p class="text-xs text-text-muted">
+                    Showing <span class="font-bold text-text-main" id="showing-count">{{ active_paths|length }}</span>
+                    learning path(s)
+                </p>
+            </div>
+            {% else %}
+            <!-- Empty State -->
+            <div class="p-16 text-center">
+                <span class="material-symbols-outlined text-text-light text-[64px] mb-4 block">school</span>
+                <h3 class="text-xl font-bold text-text-main mb-2">No learning paths yet</h3>
+                <p class="text-text-muted mb-6">
+                    Generate your first learning path to start your career progression journey.
+                </p>
+                <button onclick="document.getElementById('openGenerateForm').click()" class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-text-inverse
+                           font-medium rounded-lg hover:bg-primary-700 transition-all duration-200 hover:scale-105">
+                    <span class="material-symbols-outlined text-[18px]">add</span>
+                    Generate Your First Path
+                </button>
+            </div>
             {% endif %}
-        </td>
-    </tr>
-    {% endfor %}
-</table>
-{% else %}
-<p>No learning paths generated yet.</p>
-{% endif %}
+        </div>
+    </div>
+
+    <!-- Recommended Paths Section (Hidden by default) -->
+    <div id="recommended-section" class="tab-content hidden">
+        <div class="mb-4">
+            <h3 class="text-lg font-bold text-text-main mb-1">AI-Recommended Paths</h3>
+            <p class="text-sm text-text-muted">Based on your current skills and career interests</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% set match_percentages = [65, 72, 58, 80, 45, 68] %}
+            {% set time_estimates = ['3-6 months', '1-2 months', '6-12 months', '2-4 months', '4-8 months', '1-3
+            months'] %}
+
+            {% for role in available_roles[:6] %}
+            <div class="bg-surface rounded-xl border border-border-main shadow-sm overflow-hidden
+                        hover:shadow-md hover:-translate-y-1 transition-all duration-200 group">
+                <!-- Card Header -->
+                <div class="p-4 bg-gradient-to-br from-primary-50 to-blue-50 border-b border-border-main">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="p-2.5 bg-primary-600 rounded-lg shadow-sm group-hover:scale-110 transition-transform duration-200">
+                            <span class="material-symbols-outlined text-text-inverse text-[20px]">trending_up</span>
+                        </div>
+                        <div>
+                            <p class="font-bold text-text-main">{{ role.title }}</p>
+                            <p class="text-xs text-text-muted">Recommended for you</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Body -->
+                <div class="p-4">
+                    <!-- Match percentage -->
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs text-text-muted">Skills Match</span>
+                        <span class="text-xs font-bold text-primary-700">
+                            {{ match_percentages[loop.index0 % 6] }}%
+                        </span>
+                    </div>
+                    <div class="w-full bg-background h-1.5 rounded-full overflow-hidden mb-4">
+                        <div class="bg-primary-500 h-full transition-all duration-300"
+                            style="width: {{ match_percentages[loop.index0 % 6] }}%"></div>
+                    </div>
+
+                    <!-- Estimated time -->
+                    <div class="flex items-center gap-2 text-xs text-text-muted mb-4">
+                        <span class="material-symbols-outlined text-[14px]">schedule</span>
+                        Est. {{ time_estimates[loop.index0 % 6] }}
+                    </div>
+
+                    <!-- Generate Button -->
+                    <form method="POST" action="{{ url_for('employee.generate_learning_path') }}">
+                        <input type="hidden" name="target_role" value="{{ role.id }}">
+                        <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2
+                                   border border-primary-600 text-primary-600 text-sm font-medium rounded-lg
+                                   hover:bg-primary-600 hover:text-text-inverse transition-all duration-200">
+                            <span class="material-symbols-outlined text-[16px]">auto_awesome</span>
+                            Generate Path
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- View More Link -->
+        <div class="mt-6 text-center">
+            <a href="{{ url_for('employee.compare_roles') }}"
+                class="inline-flex items-center gap-2 text-primary-600 text-sm font-medium hover:underline">
+                Compare all available roles
+                <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Toggle Generate Form
+        const openBtn = document.getElementById('openGenerateForm');
+        const closeBtn = document.getElementById('closeGenerateForm');
+        const formSection = document.getElementById('generateFormSection');
+
+        openBtn?.addEventListener('click', () => {
+            formSection.classList.remove('hidden');
+            formSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+
+        closeBtn?.addEventListener('click', () => {
+            formSection.classList.add('hidden');
+        });
+
+        // Tab Switching
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const pathsTable = document.getElementById('paths-table');
+        const recommendedSection = document.getElementById('recommended-section');
+        const pathRows = document.querySelectorAll('.path-row');
+        const showingCount = document.getElementById('showing-count');
+
+        function updateShowingCount(tab) {
+            let count = 0;
+            pathRows.forEach(row => {
+                const status = row.dataset.status;
+                if ((tab === 'active' && status === 'active') ||
+                    (tab === 'completed' && (status === 'completed' || status === 'archived'))) {
+                    count++;
+                }
+            });
+            if (showingCount) {
+                showingCount.textContent = count;
+            }
+        }
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', function () {
+                const tab = this.dataset.tab;
+
+                // Update button styles
+                tabBtns.forEach(b => {
+                    b.classList.remove('bg-surface', 'text-text-main', 'shadow-sm');
+                    b.classList.add('text-text-muted');
+                });
+                this.classList.add('bg-surface', 'text-text-main', 'shadow-sm');
+                this.classList.remove('text-text-muted');
+
+                // Show/hide content
+                if (tab === 'recommended') {
+                    pathsTable.classList.add('hidden');
+                    recommendedSection.classList.remove('hidden');
+                } else {
+                    pathsTable.classList.remove('hidden');
+                    recommendedSection.classList.add('hidden');
+
+                    // Filter rows based on tab
+                    pathRows.forEach(row => {
+                        const status = row.dataset.status;
+                        if (tab === 'active') {
+                            row.classList.toggle('hidden', status !== 'active');
+                        } else if (tab === 'completed') {
+                            row.classList.toggle('hidden', status === 'active');
+                        }
+                    });
+
+                    updateShowingCount(tab);
+                }
+            });
+        });
+
+        // Initialize: show active paths by default
+        const activeTab = document.querySelector('[data-tab="active"]');
+        if (activeTab) {
+            activeTab.click();
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function (e) {
+            const dropdowns = document.querySelectorAll('.dropdown-menu[open]');
+            dropdowns.forEach(dropdown => {
+                if (!dropdown.contains(e.target)) {
+                    dropdown.removeAttribute('open');
+                }
+            });
+        });
+    });
+</script>
 {% endblock %}

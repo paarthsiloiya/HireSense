@@ -203,7 +203,7 @@ class TestEmployeeLearningPaths:
             f"/employee/learning-paths/{learning_path.id}"
         )
         assert response.status_code == 200
-        assert b"Recommendations" in response.data
+        assert b"Learning Path" in response.data or b"Skills to Acquire" in response.data
 
     def test_complete_learning_path(self, authenticated_employee_client, learning_path):
         """Test marking learning path as completed."""

@@ -1,88 +1,358 @@
 {% extends "employee/employee_base.html" %}
-{% block title %} – Learning Path Details{% endblock %}
+{% block title %} – {{ content.target_role_title or path.target_role|replace('_', ' ')|title }} Learning Path{% endblock
+%}
+
+{% block breadcrumb %}
+<a href="{{ url_for('employee.learning_paths') }}"
+    class="text-text-muted hover:text-primary-600 transition-colors font-medium">Learning Paths</a>
+<span class="text-text-light font-bold">&gt;</span>
+<span class="font-bold text-text-main">{{ content.target_role_title or path.target_role|replace('_', ' ')|title
+    }}</span>
+{% endblock %}
 
 {% block employee_content %}
-<h1>Learning Path: {{ content.target_role_title or path.target_role }}</h1>
+<div class="px-8 max-w-7xl mx-auto space-y-8">
+    <!-- Page Header Section -->
+    <section class="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+        <div class="space-y-3">
+            <a href="{{ url_for('employee.learning_paths') }}"
+                class="flex items-center gap-2 text-text-muted hover:text-primary-600 transition-colors w-max group">
+                <span
+                    class="material-symbols-outlined text-lg group-hover:-translate-x-1 duration-200">arrow_back</span>
+                <span class="text-sm font-medium">Back to Learning Paths</span>
+            </a>
+            <div>
+                <!-- Status Badge -->
+                <div class="flex items-center gap-3 mb-2">
+                    {% if path.status == 'active' %}
+                    <span
+                        class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary-100 text-primary-800 text-[10px] font-bold uppercase tracking-wider border border-primary-200">
+                        <span class="w-1.5 h-1.5 bg-primary-500 rounded-full animate-pulse"></span>
+                        Active
+                    </span>
+                    {% elif path.status == 'completed' %}
+                    <span
+                        class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-success-50 text-success-800 text-[10px] font-bold uppercase tracking-wider border border-success-200">
+                        <span class="material-symbols-outlined text-[12px]">check_circle</span>
+                        Completed
+                    </span>
+                    {% else %}
+                    <span
+                        class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[10px] font-bold uppercase tracking-wider border border-gray-200">
+                        Archived
+                    </span>
+                    {% endif %}
+                    <span class="text-text-light text-sm font-medium">ID #{{ "%04d" % path.id }}</span>
+                </div>
+                <h2 class="text-4xl font-extrabold text-text-main tracking-tight">{{ content.target_role_title or
+                    path.target_role|replace('_', ' ')|title }}</h2>
+                <p class="text-text-muted text-sm leading-relaxed max-w-2xl mt-2">
+                    This personalized learning path is designed to help you acquire the skills needed for your target
+                    role. Complete each skill to track your progress and update your professional profile.
+                </p>
+            </div>
+        </div>
 
-<p><a href="{{ url_for('employee.learning_paths') }}">&larr; Back to Learning Paths</a></p>
+        <!-- Actions & Overall Progress -->
+        <div class="flex flex-col gap-4 min-w-[300px]">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-text-muted uppercase tracking-widest">Overall Progress</span>
+                <span class="text-2xl font-bold text-primary-700">{{ progress.percentage }}%</span>
+            </div>
+            <div class="w-full bg-background border border-border-main h-3 rounded-full overflow-hidden">
+                <div class="bg-gradient-to-r from-primary-500 to-primary-600 h-full rounded-full transition-all duration-500"
+                    style="width: {{ progress.percentage }}%"></div>
+            </div>
 
-<table border="1" cellpadding="8">
-    <tr>
-        <td><strong>Target Role</strong></td>
-        <td>{{ content.target_role_title or path.target_role }}</td>
-    </tr>
-    <tr>
-        <td><strong>Status</strong></td>
-        <td>{{ path.status }}</td>
-    </tr>
-    <tr>
-        <td><strong>Readiness Score</strong></td>
-        <td>{{ content.readiness_score }}%</td>
-    </tr>
-    <tr>
-        <td><strong>Skills to Learn</strong></td>
-        <td>{{ content.total_skills_to_learn }}</td>
-    </tr>
-    <tr>
-        <td><strong>Skills to Improve</strong></td>
-        <td>{{ content.skills_to_improve }}</td>
-    </tr>
-    <tr>
-        <td><strong>Generated</strong></td>
-        <td>{{ path.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-    </tr>
-</table>
+            {% if path.status == 'active' %}
+            <div class="flex gap-3 justify-end mt-2">
+                <form method="POST" action="{{ url_for('employee.archive_learning_path', path_id=path.id) }}">
+                    <button type="submit"
+                        class="px-4 py-2.5 bg-surface text-text-main border border-border-main font-semibold rounded-lg hover:bg-background transition-colors hover:-translate-y-0.5 duration-200">
+                        <span class="material-symbols-outlined text-[18px] align-middle">archive</span>
+                    </button>
+                </form>
+                <form method="POST" action="{{ url_for('employee.complete_learning_path', path_id=path.id) }}">
+                    <button type="submit" {% if progress.percentage < 100 %}disabled{% endif %} class="px-6 py-2.5 font-semibold rounded-lg shadow-sm transition-all hover:-translate-y-0.5 duration-200 flex items-center gap-2
+                        {% if progress.percentage == 100 %}
+                        bg-primary-600 text-text-inverse hover:bg-primary-700
+                        {% else %}
+                        bg-gray-200 text-gray-400 cursor-not-allowed
+                        {% endif %}">
+                        <span class="material-symbols-outlined text-[18px]">task_alt</span>
+                        Complete Path
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </section>
 
-{% if path.status == 'active' %}
-<p>
-<form method="POST" action="{{ url_for('employee.complete_learning_path', path_id=path.id) }}" style="display: inline;">
-    <button type="submit" style="padding: 8px 16px; background: #28a745; color: white; border: none;">Mark as
-        Completed</button>
-</form>
-<form method="POST" action="{{ url_for('employee.archive_learning_path', path_id=path.id) }}"
-    style="display: inline; margin-left: 10px;">
-    <button type="submit" style="padding: 8px 16px; background: #6c757d; color: white; border: none;">Archive</button>
-</form>
-</p>
-{% endif %}
+    <!-- Top Row: Information Bento -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Progress Info -->
+        <div
+            class="p-6 rounded-xl bg-surface shadow-sm border border-border-main hover:shadow-md transition-shadow duration-200 flex flex-col justify-center">
+            <p class="text-xs text-text-muted font-bold uppercase tracking-widest mb-1">Status</p>
+            <p class="text-2xl font-bold text-text-main mb-3">{{ progress.completed }} / {{ progress.total }} Skills</p>
+            <div class="flex items-center gap-2 text-primary-600 text-sm font-medium">
+                <span class="material-symbols-outlined text-[18px]">schedule</span>
+                Started {{ path.created_at.strftime('%b %d, %Y') }}
+            </div>
+        </div>
 
-<h2>Recommendations</h2>
-{% if content.recommendations %}
-<table border="1" cellpadding="8" style="width: 100%;">
-    <tr>
-        <th>Skill</th>
-        <th>Priority</th>
-        <th>Current Level</th>
-        <th>Target Level</th>
-        <th>Required</th>
-        <th>Resources</th>
-    </tr>
-    {% for rec in content.recommendations %}
-    <tr
-        style="{% if rec.priority == 'high' %}background-color: #f8d7da;{% elif rec.priority == 'medium' %}background-color: #fff3cd;{% else %}background-color: #d4edda;{% endif %}">
-        <td>{{ rec.skill_name }}</td>
-        <td>{{ rec.priority|upper }}</td>
-        <td>{{ rec.current_level }}/5</td>
-        <td>{{ rec.target_level }}/5</td>
-        <td>{{ 'Yes' if rec.is_required else 'No' }}</td>
-        <td>
-            {% for resource in rec.resources %}
-            <small>{{ resource.type }}: {{ resource.title }}</small><br>
-            {% endfor %}
-        </td>
-    </tr>
-    {% endfor %}
-</table>
-<p><small>Red = high priority, Yellow = medium, Green = low priority</small></p>
-{% else %}
-<p>No recommendations at this time.</p>
-{% endif %}
+        <!-- Skills to Learn -->
+        <div
+            class="p-6 rounded-xl bg-surface shadow-sm border border-border-main hover:shadow-md transition-shadow duration-200 hover:-translate-y-0.5 group cursor-default">
+            <div class="flex justify-between items-start mb-2">
+                <div
+                    class="w-10 h-10 rounded-lg bg-danger-50 flex items-center justify-center border border-danger-100 group-hover:bg-danger-100 transition-colors duration-200">
+                    <span class="material-symbols-outlined text-danger-600">school</span>
+                </div>
+                <span class="text-[10px] text-text-light uppercase font-black tracking-widest">New Skills</span>
+            </div>
+            <p class="text-3xl font-extrabold text-text-main mt-3">{{ content.total_skills_to_learn }}</p>
+            <p class="text-xs text-text-muted mt-1">Skills to learn from scratch</p>
+        </div>
 
-<h2>Next Steps</h2>
-<ol>
-    <li>Review the skills marked as HIGH priority</li>
-    <li>Use the suggested resources to learn each skill</li>
-    <li>Update your skill profile as you learn</li>
-    <li>Compare your progress regularly</li>
-</ol>
+        <!-- Skills to Improve -->
+        <div
+            class="p-6 rounded-xl bg-surface shadow-sm border border-border-main hover:shadow-md transition-shadow duration-200 hover:-translate-y-0.5 group cursor-default">
+            <div class="flex justify-between items-start mb-2">
+                <div
+                    class="w-10 h-10 rounded-lg bg-warning-50 flex items-center justify-center border border-warning-100 group-hover:bg-warning-100 transition-colors duration-200">
+                    <span class="material-symbols-outlined text-warning-600">trending_up</span>
+                </div>
+                <span class="text-[10px] text-text-light uppercase font-black tracking-widest">Improve</span>
+            </div>
+            <p class="text-3xl font-extrabold text-text-main mt-3">{{ content.skills_to_improve }}</p>
+            <p class="text-xs text-text-muted mt-1">Skills needing improvement</p>
+        </div>
+
+        <!-- Readiness Score -->
+        <div
+            class="p-6 rounded-xl bg-primary-600 shadow-md border border-primary-500 hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 relative overflow-hidden group cursor-default">
+            <div
+                class="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 group-hover:opacity-20 transition-all duration-300">
+                <span class="material-symbols-outlined text-9xl">psychology</span>
+            </div>
+            <div class="relative z-10">
+                <div class="flex justify-between items-start mb-2">
+                    <div
+                        class="w-10 h-10 rounded-lg bg-primary-500 flex items-center justify-center border border-primary-400 group-hover:bg-primary-400 transition-colors duration-200">
+                        <span class="material-symbols-outlined text-text-inverse">psychology</span>
+                    </div>
+                    <span class="text-[10px] text-primary-200 uppercase font-black tracking-widest">Readiness</span>
+                </div>
+                <p class="text-3xl font-extrabold text-text-inverse mt-3">{{ content.readiness_score }}%</p>
+                <p class="text-xs text-primary-200 mt-1">Role readiness score</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Skills Table Section -->
+    <section class="space-y-6">
+        <div class="flex items-center justify-between">
+            <h2 class="text-xl font-bold text-text-main">Skills to Acquire</h2>
+        </div>
+
+        <div class="bg-surface rounded-xl border border-border-main shadow-sm overflow-hidden">
+            {% if content.recommendations %}
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse text-left">
+                    <thead>
+                        <tr class="bg-background">
+                            <th class="px-6 py-4 text-[0.75rem] font-bold text-text-muted uppercase tracking-widest">
+                                Skill Name
+                            </th>
+                            <th class="px-6 py-4 text-[0.75rem] font-bold text-text-muted uppercase tracking-widest">
+                                Progress
+                            </th>
+                            <th
+                                class="px-6 py-4 text-[0.75rem] font-bold text-text-muted uppercase tracking-widest text-center">
+                                Priority
+                            </th>
+                            <th
+                                class="px-6 py-4 text-[0.75rem] font-bold text-text-muted uppercase tracking-widest text-center">
+                                Status
+                            </th>
+                            <th
+                                class="px-6 py-4 text-[0.75rem] font-bold text-text-muted uppercase tracking-widest text-center">
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-border-main">
+                        {% for rec in content.recommendations %}
+                        <tr class="skill-row hover:bg-background/80 hover:shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] transition-all duration-200 group
+                                   {% if rec.completed %}opacity-60{% endif %}" data-skill="{{ rec.skill_name }}"
+                            data-completed="{{ rec.completed|default(false)|lower }}">
+                            <!-- Skill Name & Info -->
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    <!-- Priority indicator bar -->
+                                    <div class="w-1 h-10 rounded-full shrink-0
+                                        {% if rec.priority == 'high' %}bg-danger-500
+                                        {% elif rec.priority == 'medium' %}bg-warning-500
+                                        {% else %}bg-success-500{% endif %}">
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p
+                                            class="font-bold text-text-main text-sm truncate {% if rec.completed %}line-through{% endif %}">
+                                            {{ rec.skill_name }}
+                                        </p>
+                                        <p class="text-xs text-text-muted">
+                                            {% if rec.is_required %}
+                                            <span class="text-danger-600 font-medium">Required</span>
+                                            {% else %}
+                                            <span class="text-text-light">Recommended</span>
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Level Progress -->
+                            <td class="px-6 py-4">
+                                <div class="w-32">
+                                    <div class="flex justify-between items-center mb-1">
+                                        <span class="text-xs text-text-muted">Level</span>
+                                        <span class="text-xs font-bold text-text-main">
+                                            {% if rec.completed %}{{ rec.target_level }}{% else %}{{ rec.current_level
+                                            }}{% endif %}/{{ rec.target_level }}
+                                        </span>
+                                    </div>
+                                    <div class="w-full bg-background h-2 rounded-full overflow-hidden">
+                                        {% set level_progress = (rec.target_level / rec.target_level * 100) if
+                                        rec.completed else (rec.current_level / rec.target_level * 100) %}
+                                        <div class="h-full rounded-full transition-all duration-500
+                                            {% if rec.completed %}bg-success-500{% else %}bg-primary-500{% endif %}"
+                                            style="width: {{ level_progress }}%"></div>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Priority Badge -->
+                            <td class="px-6 py-4 text-center">
+                                {% if rec.priority == 'high' %}
+                                <span
+                                    class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-danger-50 text-danger-700 border border-danger-200">
+                                    High
+                                </span>
+                                {% elif rec.priority == 'medium' %}
+                                <span
+                                    class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-warning-50 text-warning-700 border border-warning-200">
+                                    Medium
+                                </span>
+                                {% else %}
+                                <span
+                                    class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-success-50 text-success-700 border border-success-200">
+                                    Low
+                                </span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Status Badge -->
+                            <td class="px-6 py-4 text-center">
+                                {% if rec.completed %}
+                                <span
+                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-success-50 text-success-700 border border-success-200">
+                                    <span class="material-symbols-outlined text-sm">check_circle</span>
+                                    Completed
+                                </span>
+                                {% elif rec.current_level > 0 %}
+                                <span
+                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200">
+                                    <span class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></span>
+                                    In Progress
+                                </span>
+                                {% else %}
+                                <span
+                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gray-50 text-gray-500 border border-gray-200">
+                                    Not Started
+                                </span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Actions -->
+                            <td class="px-6 py-4 text-center">
+                                {% if path.status == 'active' and not rec.completed %}
+                                <form method="POST" action="{{ url_for('employee.complete_skill', path_id=path.id) }}"
+                                    class="inline">
+                                    <input type="hidden" name="skill_name" value="{{ rec.skill_name }}">
+                                    <button type="submit" class="inline-flex items-center gap-1.5 px-4 py-2 bg-primary-600 text-text-inverse
+                                               text-xs font-medium rounded-lg hover:bg-primary-700 transition-all duration-200
+                                               hover:scale-105 active:scale-95 shadow-sm hover:shadow-md">
+                                        <span class="material-symbols-outlined text-[14px]">check</span>
+                                        Mark Complete
+                                    </button>
+                                </form>
+                                {% elif rec.completed %}
+                                <span
+                                    class="text-success-600 text-xs font-medium flex items-center justify-center gap-1">
+                                    <span class="material-symbols-outlined text-[16px]">verified</span>
+                                    Added to Profile
+                                </span>
+                                {% else %}
+                                <span class="text-text-light text-xs">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Table Footer -->
+            <div class="bg-background/30 px-6 py-4 flex items-center justify-between border-t border-border-main">
+                <p class="text-xs text-text-muted">
+                    <span class="font-bold text-text-main">{{ progress.completed }}</span> of
+                    <span class="font-bold text-text-main">{{ progress.total }}</span> skills completed
+                </p>
+                <div class="flex items-center gap-4">
+                    <span class="text-xs text-text-muted">
+                        Readiness Score: <span class="font-bold text-primary-700">{{ content.readiness_score }}%</span>
+                    </span>
+                </div>
+            </div>
+            {% else %}
+            <!-- Empty State -->
+            <div class="p-16 text-center">
+                <span
+                    class="material-symbols-outlined text-text-light text-[64px] mb-4 block">sentiment_satisfied</span>
+                <h3 class="text-xl font-bold text-text-main mb-2">All caught up!</h3>
+                <p class="text-text-muted mb-6">
+                    No skills to learn for this path. You're already qualified for this role!
+                </p>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Add confirmation for completing skills
+        const completeForms = document.querySelectorAll('form[action*="skill/complete"]');
+        completeForms.forEach(form => {
+            form.addEventListener('submit', function (e) {
+                const skillName = this.querySelector('input[name="skill_name"]').value;
+                if (!confirm(`Mark "${skillName}" as complete? This will add it to your skill profile.`)) {
+                    e.preventDefault();
+                }
+            });
+        });
+
+        // Add animation when skill is marked complete (for visual feedback)
+        const skillRows = document.querySelectorAll('.skill-row');
+        skillRows.forEach(row => {
+            if (row.dataset.completed === 'true') {
+                row.classList.add('animate-pulse');
+                setTimeout(() => {
+                    row.classList.remove('animate-pulse');
+                }, 1000);
+            }
+        });
+    });
+</script>
 {% endblock %}

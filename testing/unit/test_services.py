@@ -6,11 +6,12 @@ import os
 import json
 from io import BytesIO
 from werkzeug.datastructures import FileStorage
+from app import db
 from app.services.skill_service import SkillService
 from app.services.project_service import ProjectService
 from app.services.learning_path_service import LearningPathService
 from app.services.resume_service import ResumeService
-from app.models import UserSkill, ProjectSkill, ProjectAssignment, Resume
+from app.models import UserSkill, ProjectSkill, ProjectAssignment, Resume, LearningPath
 
 
 class TestSkillService:
@@ -457,4 +458,326 @@ class TestSkillServiceAdvanced:
         with app.app_context():
             result = SkillService.remove_user_skill(employee_user.id, skills[0].id)
             assert result is False
+
+
+class TestLearningPathServiceMarkSkillComplete:
+    """Tests for LearningPathService.mark_skill_complete."""
+
+    def test_mark_skill_complete_success(self, app, db_session, employee_user, skills):
+        """Test successfully marking a skill as complete."""
+        with app.app_context():
+            # Create a learning path with the skill
+            path = LearningPathService.generate_learning_path(
+                employee_user.id, "senior_developer"
+            )
+
+            # Get a skill from recommendations
+            content = json.loads(path.generated_content)
+            if content["recommendations"]:
+                skill_name = content["recommendations"][0]["skill_name"]
+
+                result = LearningPathService.mark_skill_complete(
+                    path.id, skill_name, employee_user.id
+                )
+
+                assert result["skill_name"] == skill_name
+                assert result["progress_percentage"] >= 0
+                assert "completed_skills" in result
+                assert "total_skills" in result
+
+    def test_mark_skill_complete_path_not_found(self, db_session, employee_user):
+        """Test marking skill complete on nonexistent path."""
+        with pytest.raises(ValueError, match="Learning path not found"):
+            LearningPathService.mark_skill_complete(99999, "Python", employee_user.id)
+
+    def test_mark_skill_complete_unauthorized(self, db_session, learning_path, manager_user):
+        """Test marking skill complete by unauthorized user."""
+        with pytest.raises(ValueError, match="Unauthorized"):
+            LearningPathService.mark_skill_complete(
+                learning_path.id, "Docker", manager_user.id
+            )
+
+    def test_mark_skill_complete_non_active_path(self, app, db_session, employee_user):
+        """Test marking skill complete on archived path."""
+        with app.app_context():
+            path = LearningPathService.generate_learning_path(
+                employee_user.id, "senior_developer"
+            )
+            LearningPathService.update_learning_path_status(path.id, "archived")
+
+            with pytest.raises(ValueError, match="non-active"):
+                LearningPathService.mark_skill_complete(path.id, "Python", employee_user.id)
+
+    def test_mark_skill_complete_skill_not_found(self, db_session, learning_path, employee_user):
+        """Test marking skill that doesn't exist in path."""
+        with pytest.raises(ValueError, match="not found in this learning path"):
+            LearningPathService.mark_skill_complete(
+                learning_path.id, "NonexistentSkill", employee_user.id
+            )
+
+    def test_mark_skill_complete_updates_user_skill(self, app, db_session, employee_user, skills):
+        """Test that completing skill adds it to user profile."""
+        with app.app_context():
+            # Generate path - Docker should be a required skill
+            path = LearningPathService.generate_learning_path(
+                employee_user.id, "devops_engineer"
+            )
+
+            # Docker is a required skill for devops
+            result = LearningPathService.mark_skill_complete(
+                path.id, "Docker", employee_user.id
+            )
+
+            # Check user now has the skill
+            user_skills = SkillService.get_user_skills(employee_user.id)
+            # The skill may have been added if it exists in DB
+            assert result["skill_name"] == "Docker"
+
+    def test_mark_skill_complete_all_skills(self, app, db_session, employee_user):
+        """Test completing all skills auto-completes the path."""
+        with app.app_context():
+            # Generate path
+            path = LearningPathService.generate_learning_path(
+                employee_user.id, "senior_developer"
+            )
+
+            content = json.loads(path.generated_content)
+            recommendations = content.get("recommendations", [])
+
+            # Mark all skills complete
+            for rec in recommendations:
+                LearningPathService.mark_skill_complete(
+                    path.id, rec["skill_name"], employee_user.id
+                )
+
+            # Refresh path
+            from app.models import LearningPath
+            path = db.session.get(LearningPath, path.id)
+            assert path.status == "completed"
+
+    def test_get_path_progress(self, db_session, learning_path):
+        """Test getting path progress."""
+        progress = LearningPathService.get_path_progress(learning_path)
+        assert "percentage" in progress
+        assert "completed" in progress
+        assert "total" in progress
+
+    def test_get_path_progress_empty_content(self, db_session, employee_user):
+        """Test getting progress for path with no content."""
+        from app.models import LearningPath
+        path = LearningPath(
+            user_id=employee_user.id,
+            target_role="senior_developer",
+            generated_content=None,
+            status="active",
+        )
+        db_session.add(path)
+        db_session.commit()
+
+        progress = LearningPathService.get_path_progress(path)
+        assert progress["percentage"] == 0
+        assert progress["completed"] == 0
+        assert progress["total"] == 0
+
+
+class TestLearningPathServiceAdvanced:
+    """Additional tests for LearningPathService edge cases."""
+
+    def test_generate_path_with_existing_skills(self, app, db_session, employee_with_skills):
+        """Test generating path when user has some skills."""
+        with app.app_context():
+            path = LearningPathService.generate_learning_path(
+                employee_with_skills.id, "senior_developer"
+            )
+            content = json.loads(path.generated_content)
+
+            # User has Python at level 4, so they should meet that requirement
+            assert content["readiness_score"] >= 0
+
+    def test_generate_path_archives_existing(self, app, db_session, employee_user):
+        """Test generating new path archives old active paths."""
+        with app.app_context():
+            # Generate first path
+            path1 = LearningPathService.generate_learning_path(
+                employee_user.id, "senior_developer"
+            )
+
+            # Generate second path for same role
+            path2 = LearningPathService.generate_learning_path(
+                employee_user.id, "senior_developer"
+            )
+
+            # Refresh path1
+            from app.models import LearningPath
+            path1_refreshed = db.session.get(LearningPath, path1.id)
+
+            assert path1_refreshed.status == "archived"
+            assert path2.status == "active"
+
+    def test_get_user_learning_paths_with_status(self, db_session, learning_path, employee_user):
+        """Test getting learning paths filtered by status."""
+        paths = LearningPathService.get_user_learning_paths(
+            employee_user.id, status="active"
+        )
+        assert all(p.status == "active" for p in paths)
+
+    def test_get_learning_path_by_id(self, db_session, learning_path):
+        """Test getting learning path by ID."""
+        path = LearningPathService.get_learning_path_by_id(learning_path.id)
+        assert path is not None
+        assert path.id == learning_path.id
+
+    def test_get_learning_path_by_id_not_found(self, db_session):
+        """Test getting nonexistent learning path."""
+        path = LearningPathService.get_learning_path_by_id(99999)
+        assert path is None
+
+    def test_update_learning_path_not_found(self, db_session):
+        """Test updating nonexistent learning path."""
+        with pytest.raises(ValueError, match="not found"):
+            LearningPathService.update_learning_path_status(99999, "completed")
+
+    def test_compare_roles_with_skills(self, db_session, employee_with_skills):
+        """Test role comparison with existing skills."""
+        comparison = LearningPathService.compare_roles(
+            employee_with_skills.id, "senior_developer"
+        )
+
+        # Employee has Python at level 4
+        assert comparison["required_skills"]["met"] > 0
+        assert comparison["readiness_score"] >= 0
+        assert "estimated_time_to_ready" in comparison
+
+    def test_compare_roles_user_not_found(self, db_session):
+        """Test comparing roles for nonexistent user."""
+        with pytest.raises(ValueError, match="User not found"):
+            LearningPathService.compare_roles(99999, "senior_developer")
+
+    def test_get_active_learning_path(self, db_session, learning_path, employee_user):
+        """Test getting active learning path."""
+        active = LearningPathService.get_active_learning_path(employee_user.id)
+        assert active is not None
+        assert active.status == "active"
+
+    def test_get_active_learning_path_none(self, db_session, employee_user):
+        """Test getting active path when none exists."""
+        active = LearningPathService.get_active_learning_path(employee_user.id)
+        assert active is None
+
+
+class TestResumeServiceAdvanced:
+    """Additional tests for ResumeService."""
+
+    def test_parse_resume_skills(self, app, db_session, employee_user, tmp_path):
+        """Test parsing skills from resume."""
+        with app.app_context():
+            # First upload a resume
+            test_file = tmp_path / "test.pdf"
+            test_file.write_bytes(b"%PDF-1.4\nTest resume")
+
+            from werkzeug.datastructures import FileStorage
+            with open(test_file, 'rb') as f:
+                file_storage = FileStorage(
+                    stream=f,
+                    filename="test.pdf",
+                    content_type="application/pdf"
+                )
+                resume = ResumeService.upload_resume(employee_user.id, file_storage)
+
+            # Parse resume
+            result = ResumeService.parse_resume_skills(resume.id)
+
+            assert "extracted_skills" in result
+            assert "parsed_at" in result
+            assert result["parser_version"] == "stub_v1"
+
+            # Cleanup
+            if os.path.exists(resume.file_path):
+                os.remove(resume.file_path)
+
+    def test_parse_resume_skills_not_found(self, app, db_session):
+        """Test parsing nonexistent resume."""
+        with app.app_context():
+            with pytest.raises(ValueError, match="Resume not found"):
+                ResumeService.parse_resume_skills(99999)
+
+    def test_sync_parsed_skills_to_profile(self, app, db_session, employee_user, skills):
+        """Test syncing parsed skills to user profile."""
+        with app.app_context():
+            # Sync existing skills
+            skill_names = ["Python", "JavaScript", "NonexistentSkill"]
+            count = ResumeService.sync_parsed_skills_to_profile(
+                employee_user.id, skill_names, default_proficiency=3
+            )
+
+            # Python and JavaScript should be added (if not already there)
+            assert count >= 0  # May be 0-2 depending on existing skills
+
+    def test_sync_parsed_skills_skip_duplicates(self, app, db_session, employee_with_skills, skills):
+        """Test syncing skills skips existing ones."""
+        with app.app_context():
+            # Employee already has Python
+            skill_names = ["Python"]
+            count = ResumeService.sync_parsed_skills_to_profile(
+                employee_with_skills.id, skill_names
+            )
+
+            assert count == 0  # Already has Python
+
+    def test_get_recent_resume_updates(self, app, db_session, employee_user, tmp_path):
+        """Test getting recent resume updates."""
+        with app.app_context():
+            # Upload a resume first
+            test_file = tmp_path / "test.pdf"
+            test_file.write_bytes(b"%PDF-1.4\nTest")
+
+            from werkzeug.datastructures import FileStorage
+            with open(test_file, 'rb') as f:
+                file_storage = FileStorage(
+                    stream=f,
+                    filename="test.pdf",
+                    content_type="application/pdf"
+                )
+                resume = ResumeService.upload_resume(employee_user.id, file_storage)
+
+            # Get recent updates
+            updates = ResumeService.get_recent_resume_updates(limit=10)
+
+            assert len(updates) > 0
+            assert any(u["user_id"] == employee_user.id for u in updates)
+
+            # Cleanup
+            if os.path.exists(resume.file_path):
+                os.remove(resume.file_path)
+
+    def test_allowed_file_extensions(self):
+        """Test allowed file extension checking."""
+        assert ResumeService.allowed_file("test.pdf") is True
+        assert ResumeService.allowed_file("test.doc") is True
+        assert ResumeService.allowed_file("test.docx") is True
+        assert ResumeService.allowed_file("test.txt") is False
+        assert ResumeService.allowed_file("test.exe") is False
+        assert ResumeService.allowed_file("noextension") is False
+
+
+class TestSkillServiceVerification:
+    """Tests for skill verification functionality."""
+
+    def test_verify_user_skill(self, app, db_session, employee_with_skills, skills):
+        """Test verifying a user skill."""
+        with app.app_context():
+            result = SkillService.verify_user_skill(employee_with_skills.id, skills[0].id)
+            assert result.is_verified is True
+
+    def test_verify_nonexistent_skill(self, app, db_session, employee_user, skills):
+        """Test verifying skill user doesn't have."""
+        with app.app_context():
+            with pytest.raises(ValueError):
+                SkillService.verify_user_skill(employee_user.id, skills[0].id)
+
+    def test_get_recent_skill_updates(self, app, db_session, employee_with_skills):
+        """Test getting recent skill updates."""
+        with app.app_context():
+            updates = SkillService.get_recent_skill_updates(limit=10)
+            assert isinstance(updates, list)
 

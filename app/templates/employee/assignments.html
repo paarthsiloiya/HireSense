@@ -2,44 +2,274 @@
 {% block title %} – My Assignments{% endblock %}
 
 {% block employee_content %}
-<h1>My Project Assignments</h1>
+<div class="px-6 pb-12 max-w-7xl mx-auto">
+    <!-- Filter & Action Bar -->
+    <section class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div class="flex-1 max-w-2xl">
+            <h2 class="text-3xl font-extrabold text-text-main tracking-tight mb-2">Portfolio Overview</h2>
+            <p class="text-text-muted text-sm">Manage your active projects, tracked milestones, and historical
+                assignment data.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+            <!-- Search Box (Static for now) -->
+            <div class="relative group">
+                <span
+                    class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-light group-focus-within:text-primary-600 transition-colors">search</span>
+                <input
+                    class="pl-10 pr-4 py-2.5 bg-surface border border-border-main rounded-lg text-sm w-64 focus:ring-2 focus:ring-primary-600/20 transition-all outline-none"
+                    placeholder="Search projects or managers..." type="text" />
+            </div>
+            <!-- Status Filter Buttons -->
+            <div class="flex items-center bg-background rounded-lg p-1">
+                <a href="{{ url_for('employee.list_assignments') }}"
+                    class="px-4 py-1.5 text-xs font-semibold rounded-md transition-colors
+                    {% if not status_filter %}bg-surface text-text-main shadow-sm{% else %}text-text-muted hover:text-primary-700{% endif %}">
+                    All
+                </a>
+                <a href="{{ url_for('employee.list_assignments', status='active') }}"
+                    class="px-4 py-1.5 text-xs font-semibold rounded-md transition-colors
+                    {% if status_filter == 'active' %}bg-surface text-text-main shadow-sm{% else %}text-text-muted hover:text-primary-700{% endif %}">
+                    Active
+                </a>
+                <a href="{{ url_for('employee.list_assignments', status='completed') }}"
+                    class="px-4 py-1.5 text-xs font-semibold rounded-md transition-colors
+                    {% if status_filter == 'completed' %}bg-surface text-text-main shadow-sm{% else %}text-text-muted hover:text-primary-700{% endif %}">
+                    Completed
+                </a>
+                <a href="{{ url_for('employee.list_assignments', status='removed') }}"
+                    class="px-4 py-1.5 text-xs font-semibold rounded-md transition-colors
+                    {% if status_filter == 'removed' %}bg-surface text-text-main shadow-sm{% else %}text-text-muted hover:text-primary-700{% endif %}">
+                    Removed
+                </a>
+            </div>
+        </div>
+    </section>
 
-<p>
-    Filter by status:
-    <a href="{{ url_for('employee.list_assignments') }}">All</a> |
-    <a href="{{ url_for('employee.list_assignments', status='active') }}">Active</a> |
-    <a href="{{ url_for('employee.list_assignments', status='completed') }}">Completed</a> |
-    <a href="{{ url_for('employee.list_assignments', status='removed') }}">Removed</a>
-</p>
+    <!-- Table Container -->
+    <div class="bg-surface rounded-xl shadow-sm border border-border-main overflow-hidden">
+        {% set page = request.args.get('page', '1')|int %}
+        {% set per_page = 5 %}
+        {% set total_assignments = assignments|length %}
+        {% set total_pages = (total_assignments + per_page - 1) // per_page %}
+        {% set start_offset = (page - 1) * per_page %}
+        {% set paginated_assignments = assignments[start_offset:start_offset + per_page] %}
 
-{% if assignments %}
-<table border="1" cellpadding="8" style="width: 100%;">
-    <tr>
-        <th>Project</th>
-        <th>Description</th>
-        <th>Manager</th>
-        <th>Role</th>
-        <th>Project Status</th>
-        <th>Assigned Date</th>
-        <th>Actions</th>
-    </tr>
-    {% for assignment in assignments %}
-    <tr>
-        <td><a href="{{ url_for('employee.view_assignment', assignment_id=assignment.assignment_id) }}">{{
-                assignment.project_title }}</a></td>
-        <td>{{ assignment.project_description[:50] if assignment.project_description else '-' }}{{ '...' if
-            assignment.project_description and assignment.project_description|length > 50 else '' }}</td>
-        <td>{{ assignment.manager_name }}</td>
-        <td>{{ assignment.role_in_project or '-' }}</td>
-        <td>{{ assignment.project_status }}</td>
-        <td>{{ assignment.allotted_date.strftime('%Y-%m-%d') if assignment.allotted_date else '-' }}</td>
-        <td>
-            <a href="{{ url_for('employee.view_assignment', assignment_id=assignment.assignment_id) }}">View Details</a>
-        </td>
-    </tr>
-    {% endfor %}
-</table>
-{% else %}
-<p>No assignments found.</p>
-{% endif %}
+        {% if assignments %}
+        <div class="overflow-x-auto">
+            <table class="w-full border-collapse text-left">
+                <thead>
+                    <tr class="bg-background">
+                        <th class="px-6 py-3 text-[0.75rem] font-bold text-text-muted uppercase tracking-widest">Project
+                            Name</th>
+                        <th
+                            class="px-6 py-3 text-[0.75rem] font-bold text-text-muted uppercase tracking-widest text-center">
+                            Manager</th>
+                        <th class="px-6 py-3 text-[0.75rem] font-bold text-text-muted uppercase tracking-widest">Role
+                        </th>
+                        <th
+                            class="px-6 py-3 text-[0.75rem] font-bold text-text-muted uppercase tracking-widest text-center">
+                            Project Status</th>
+                        <th
+                            class="px-6 py-3 text-[0.75rem] font-bold text-text-muted uppercase tracking-widest whitespace-nowrap">
+                            Start Date</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-border-main">
+                    {% for assignment in paginated_assignments %}
+                    <tr class="hover:bg-background/50 transition-colors cursor-pointer"
+                        onclick="window.location='{{ url_for('employee.view_assignment', assignment_id=assignment.assignment_id) }}'">
+                        <td class="px-6 py-3">
+                            <div class="min-w-0">
+                                <p class="font-bold text-text-main text-[0.875rem] truncate">{{ assignment.project_title
+                                    }}</p>
+                                {% if assignment.project_description %}
+                                <p class="text-[0.75rem] text-text-light truncate">
+                                    {{ assignment.project_description[:50] }}{{ '...' if
+                                    assignment.project_description|length > 50 else '' }}
+                                </p>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-6 py-3 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <div
+                                    class="w-6 h-6 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 text-[10px] font-bold shrink-0">
+                                    {{ assignment.manager_name[0] if assignment.manager_name else '?' }}
+                                </div>
+                                <span class="text-[0.875rem] font-medium text-text-main">{{ assignment.manager_name
+                                    }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-3">
+                            <span class="text-[0.875rem] text-text-muted">{{ assignment.role_in_project or '-' }}</span>
+                        </td>
+                        <td class="px-6 py-3 text-center">
+                            {% if assignment.project_status == 'active' %}
+                            <span
+                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary-100 text-primary-700">
+                                <span class="w-1.5 h-1.5 rounded-full bg-primary-500 mr-2"></span>
+                                Active
+                            </span>
+                            {% elif assignment.project_status == 'completed' %}
+                            <span
+                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
+                                <span class="w-1.5 h-1.5 rounded-full bg-gray-400 mr-2"></span>
+                                Completed
+                            </span>
+                            {% elif assignment.project_status == 'on hold' %}
+                            <span
+                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                                <span class="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2"></span>
+                                On Hold
+                            </span>
+                            {% else %}
+                            <span
+                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
+                                <span class="w-1.5 h-1.5 rounded-full bg-gray-400 mr-2"></span>
+                                {{ assignment.project_status|title }}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-3 text-[0.875rem] text-text-muted whitespace-nowrap">
+                            {{ assignment.allotted_date.strftime('%b %d, %Y') if assignment.allotted_date else '-' }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination Footer -->
+        <div class="bg-background/30 px-6 py-4 flex items-center justify-between border-t border-border-main">
+            <p class="text-xs text-text-muted">
+                Showing <span class="font-bold text-text-main">{{ start_offset + 1 if total_assignments > 0 else 0 }} -
+                    {{ (start_offset + paginated_assignments|length) if total_assignments > 0 else 0 }}</span> of <span
+                    class="font-bold text-text-main">{{ total_assignments }}</span>
+                assignment{{ 's' if total_assignments != 1 else '' }}
+                {% if status_filter %} ({{ status_filter }}){% endif %}
+            </p>
+            {% if total_pages > 1 %}
+            <div class="flex gap-2">
+                {% if page > 1 %}
+                <a href="{{ url_for('employee.list_assignments', page=page-1, status=status_filter or None) }}"
+                    class="w-8 h-8 flex items-center justify-center rounded-md border border-border-main text-text-light hover:bg-surface hover:text-text-main transition-all">
+                    <span class="material-symbols-outlined text-sm">chevron_left</span>
+                </a>
+                {% else %}
+                <button disabled
+                    class="w-8 h-8 flex items-center justify-center rounded-md border border-border-main text-text-light/50 cursor-not-allowed">
+                    <span class="material-symbols-outlined text-sm">chevron_left</span>
+                </button>
+                {% endif %}
+
+                {% for p in range(1, total_pages + 1) %}
+                <a href="{{ url_for('employee.list_assignments', page=p, status=status_filter or None) }}"
+                    class="w-8 h-8 flex items-center justify-center rounded-md {{ 'bg-primary-600 text-text-inverse text-xs font-bold' if p == page else 'border border-border-main text-text-muted hover:bg-surface hover:text-text-main text-xs font-bold transition-all' }}">
+                    {{ p }}
+                </a>
+                {% endfor %}
+
+                {% if page < total_pages %} <a
+                    href="{{ url_for('employee.list_assignments', page=page+1, status=status_filter or None) }}"
+                    class="w-8 h-8 flex items-center justify-center rounded-md border border-border-main text-text-light hover:bg-surface hover:text-text-main transition-all">
+                    <span class="material-symbols-outlined text-sm">chevron_right</span>
+                    </a>
+                    {% else %}
+                    <button disabled
+                        class="w-8 h-8 flex items-center justify-center rounded-md border border-border-main text-text-light/50 cursor-not-allowed">
+                        <span class="material-symbols-outlined text-sm">chevron_right</span>
+                    </button>
+                    {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <!-- Empty State -->
+        <div class="p-16 text-center">
+            <span class="material-symbols-outlined text-text-light text-[64px] mb-4 block">assignment</span>
+            <h3 class="text-xl font-bold text-text-main mb-2">No assignments found</h3>
+            <p class="text-text-muted mb-6">
+                {% if status_filter %}
+                No {{ status_filter }} assignments at this time. Try a different filter.
+                {% else %}
+                You don't have any project assignments yet. Check back later for new opportunities.
+                {% endif %}
+            </p>
+            {% if status_filter %}
+            <a href="{{ url_for('employee.list_assignments') }}"
+                class="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-text-inverse text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors hover:scale-105">
+                <span class="material-symbols-outlined text-[16px]">filter_list_off</span>
+                Clear Filter
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Bento Stats Section -->
+    <section class="mt-12 grid grid-cols-1 md:grid-cols-4 gap-6">
+        <!-- Stat Card 1: Completion Rate -->
+        <div
+            class="bg-primary-600 p-6 rounded-xl flex flex-col justify-between min-h-[160px] shadow-lg hover:shadow-xl transition-shadow duration-200">
+            <div class="flex justify-between items-start">
+                <span class="material-symbols-outlined text-primary-200/50 text-3xl">task_alt</span>
+                <span class="text-[10px] text-primary-200/60 uppercase font-black tracking-widest">Efficiency</span>
+            </div>
+            <div>
+                <p class="text-text-inverse text-3xl font-bold tracking-tight">
+                    {% if assignments|length > 0 %}
+                    {{ ((assignments|selectattr('project_status', 'equalto', 'completed')|list|length /
+                    assignments|length) * 100)|round|int }}%
+                    {% else %}
+                    0%
+                    {% endif %}
+                </p>
+                <p class="text-primary-200/70 text-xs">Completion Rate</p>
+            </div>
+        </div>
+
+        <!-- Stat Card 2: Total Assignments -->
+        <div
+            class="bg-surface p-6 rounded-xl flex flex-col justify-between border border-border-main shadow-sm hover:shadow-md transition-shadow duration-200">
+            <div class="flex justify-between items-start">
+                <span class="material-symbols-outlined text-text-light text-3xl">assignment</span>
+                <span class="text-[10px] text-text-light uppercase font-black tracking-widest">Projects</span>
+            </div>
+            <div>
+                <p class="text-text-main text-3xl font-bold tracking-tight">{{ assignments|length }}</p>
+                <p class="text-text-muted text-xs">Total Assignments</p>
+            </div>
+        </div>
+
+        <!-- Stat Card 3: Active Projects -->
+        <div
+            class="bg-surface p-6 rounded-xl flex flex-col justify-between border border-border-main shadow-sm hover:shadow-md transition-shadow duration-200">
+            <div class="flex justify-between items-start">
+                <span class="material-symbols-outlined text-text-light text-3xl">pending_actions</span>
+                <span class="text-[10px] text-text-light uppercase font-black tracking-widest">Active</span>
+            </div>
+            <div>
+                <p class="text-text-main text-3xl font-bold tracking-tight">
+                    {{ assignments|selectattr('project_status', 'equalto', 'active')|list|length }}
+                </p>
+                <p class="text-text-muted text-xs">Active Projects</p>
+            </div>
+        </div>
+
+        <!-- Stat Card 4: Unique Managers -->
+        <div
+            class="bg-surface p-6 rounded-xl flex flex-col justify-between border border-border-main shadow-sm hover:shadow-md transition-shadow duration-200">
+            <div class="flex justify-between items-start">
+                <span class="material-symbols-outlined text-text-light text-3xl">group</span>
+                <span class="text-[10px] text-text-light uppercase font-black tracking-widest">Collaborators</span>
+            </div>
+            <div>
+                <p class="text-text-main text-3xl font-bold tracking-tight">
+                    {{ assignments|map(attribute='manager_name')|unique|list|length }}
+                </p>
+                <p class="text-text-muted text-xs">Unique Managers</p>
+            </div>
+        </div>
+    </section>
+</div>
 {% endblock %}

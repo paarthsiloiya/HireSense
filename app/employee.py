@@ -52,6 +52,7 @@ def dashboard():
         skills=skills,
         active_path=active_path,
         resume=resume,
+        active_page="Dashboard",
     )
 
 
@@ -74,6 +75,7 @@ def list_assignments():
         "employee/assignments.html",
         assignments=assignments,
         status_filter=status_filter,
+        active_page="Assignments",
     )
 
 
@@ -98,6 +100,7 @@ def view_assignment(assignment_id):
         skill_requirements=skill_requirements,
         my_skills=my_skills,
         my_skill_ids=my_skill_ids,
+        active_page="Assignments",
     )
 
 
@@ -119,6 +122,7 @@ def profile():
         skills=skills,
         resume=resume,
         active_path=active_path,
+        active_page="Profile",
     )
 
 
@@ -135,6 +139,7 @@ def view_resume():
     return render_template(
         "employee/resume.html",
         resume=resume,
+        active_page="Resume",
     )
 
 
@@ -159,7 +164,7 @@ def upload_resume():
         except ValueError as e:
             flash(str(e), "danger")
 
-    return render_template("employee/resume_upload.html")
+    return render_template("employee/resume_upload.html", active_page="Resume")
 
 
 @employee_bp.route("/resume/download")
@@ -212,6 +217,7 @@ def my_skills():
         "employee/skills.html",
         skills=skills,
         available_skills=available_skills,
+        active_page="Skills",
     )
 
 
@@ -292,6 +298,7 @@ def compare_roles():
         available_roles=available_roles,
         selected_role=target_role,
         comparison=comparison,
+        active_page="Compare Roles",
     )
 
 
@@ -306,10 +313,17 @@ def learning_paths():
     paths = LearningPathService.get_user_learning_paths(current_user.id)
     available_roles = LearningPathService.get_available_target_roles()
 
+    # Calculate progress for each path
+    path_progress = {}
+    for path in paths:
+        path_progress[path.id] = LearningPathService.get_path_progress(path)
+
     return render_template(
         "employee/learning_paths.html",
         paths=paths,
         available_roles=available_roles,
+        path_progress=path_progress,
+        active_page="Learning Paths",
     )
 
 
@@ -342,11 +356,14 @@ def view_learning_path(path_id):
         abort(404)
 
     content = json.loads(path.generated_content) if path.generated_content else {}
+    progress = LearningPathService.get_path_progress(path)
 
     return render_template(
         "employee/learning_path_detail.html",
         path=path,
         content=content,
+        progress=progress,
+        active_page="Learning Paths",
     )
 
 
@@ -382,3 +399,31 @@ def archive_learning_path(path_id):
         flash(str(e), "danger")
 
     return redirect(url_for("employee.learning_paths"))
+
+
+@employee_bp.route("/learning-paths/<int:path_id>/skill/complete", methods=["POST"])
+@employee_required
+def complete_skill(path_id):
+    """Mark a skill as completed in a learning path."""
+    skill_name = request.form.get("skill_name", "").strip()
+
+    if not skill_name:
+        flash("Skill name is required.", "danger")
+        return redirect(url_for("employee.view_learning_path", path_id=path_id))
+
+    try:
+        result = LearningPathService.mark_skill_complete(
+            path_id=path_id,
+            skill_name=skill_name,
+            user_id=current_user.id
+        )
+
+        if result["path_completed"]:
+            flash(f"Congratulations! You've completed all skills in this learning path!", "success")
+        else:
+            flash(f"Skill '{skill_name}' marked as complete. Progress: {result['progress_percentage']}%", "success")
+
+    except ValueError as e:
+        flash(str(e), "danger")
+
+    return redirect(url_for("employee.view_learning_path", path_id=path_id))

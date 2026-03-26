@@ -1,32 +1,159 @@
 {% extends "base.html" %}
 
 {% block content %}
-<nav style="background-color: #f8f9fa; padding: 10px; margin-bottom: 20px;">
-    <strong>Employee Portal</strong> |
-    <a href="{{ url_for('employee.dashboard') }}">Dashboard</a> |
-    <a href="{{ url_for('employee.list_assignments') }}">My Assignments</a> |
-    <a href="{{ url_for('employee.profile') }}">My Profile</a> |
-    <a href="{{ url_for('employee.my_skills') }}">My Skills</a> |
-    <a href="{{ url_for('employee.view_resume') }}">My Resume</a> |
-    <a href="{{ url_for('employee.learning_paths') }}">Learning Paths</a> |
-    <a href="{{ url_for('employee.compare_roles') }}">Compare Roles</a> |
-    <a href="{{ url_for('auth.logout') }}">Logout</a>
-</nav>
+<div class="flex h-screen overflow-hidden bg-background">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-primary-950 flex flex-col transition-all duration-300 flex-shrink-0 shadow-xl z-20">
+        <div class="p-5">
+            <div class="flex items-center gap-3 mb-8 text-text-inverse">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                    class="w-8 h-8 p-1.5 rounded-lg fill-current bg-primary-700 shadow-sm">
+                    <path
+                        d="M1 11C6.52285 11 11 6.52285 11 1H13C13 6.52285 17.4772 11 23 11V13C17.4772 13 13 17.4772 13 23H11C11 17.4772 6.52285 13 1 13V11Z">
+                    </path>
+                </svg>
+                <h1 class="text-2xl font-bold tracking-tight">HireSense</h1>
+            </div>
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-{% if messages %}
-<div style="margin-bottom: 15px;">
-    {% for category, message in messages %}
-    <div style="padding: 10px; margin-bottom: 5px; border: 1px solid;
-        {% if category == 'success' %}background-color: #d4edda; border-color: #28a745;
-        {% elif category == 'danger' %}background-color: #f8d7da; border-color: #dc3545;
-        {% else %}background-color: #d1ecf1; border-color: #17a2b8;{% endif %}">
-        {{ message }}
-    </div>
-    {% endfor %}
+            <nav class="flex flex-col gap-1.5">
+                <a href="{{ url_for('employee.dashboard') }}"
+                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+                    {% if active_page == 'Dashboard' %} bg-primary-900/80 text-primary-400 shadow-sm {% else %} text-text-light hover:bg-primary-900/50 hover:text-text-inverse {% endif %}">
+                    <span class="material-symbols-outlined text-[20px]">dashboard</span>
+                    Dashboard
+                </a>
+                <a href="{{ url_for('employee.list_assignments') }}"
+                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+                    {% if active_page == 'Assignments' %} bg-primary-900/80 text-primary-400 shadow-sm {% else %} text-text-light hover:bg-primary-900/50 hover:text-text-inverse {% endif %}">
+                    <span class="material-symbols-outlined text-[20px]">assignment</span>
+                    My Assignments
+                </a>
+                <a href="{{ url_for('employee.profile') }}"
+                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+                    {% if active_page == 'Profile' %} bg-primary-900/80 text-primary-400 shadow-sm {% else %} text-text-light hover:bg-primary-900/50 hover:text-text-inverse {% endif %}">
+                    <span class="material-symbols-outlined text-[20px]">person</span>
+                    My Profile
+                </a>
+                <a href="{{ url_for('employee.my_skills') }}"
+                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+                    {% if active_page == 'Skills' %} bg-primary-900/80 text-primary-400 shadow-sm {% else %} text-text-light hover:bg-primary-900/50 hover:text-text-inverse {% endif %}">
+                    <span class="material-symbols-outlined text-[20px]">psychology</span>
+                    My Skills
+                </a>
+                <a href="{{ url_for('employee.view_resume') }}"
+                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+                    {% if active_page == 'Resume' %} bg-primary-900/80 text-primary-400 shadow-sm {% else %} text-text-light hover:bg-primary-900/50 hover:text-text-inverse {% endif %}">
+                    <span class="material-symbols-outlined text-[20px]">description</span>
+                    My Resume
+                </a>
+                <a href="{{ url_for('employee.learning_paths') }}"
+                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+                    {% if active_page == 'Learning Paths' %} bg-primary-900/80 text-primary-400 shadow-sm {% else %} text-text-light hover:bg-primary-900/50 hover:text-text-inverse {% endif %}">
+                    <span class="material-symbols-outlined text-[20px]">school</span>
+                    Learning Paths
+                </a>
+                <a href="{{ url_for('employee.compare_roles') }}"
+                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+                    {% if active_page == 'Compare Roles' %} bg-primary-900/80 text-primary-400 shadow-sm {% else %} text-text-light hover:bg-primary-900/50 hover:text-text-inverse {% endif %}">
+                    <span class="material-symbols-outlined text-[20px]">compare_arrows</span>
+                    Compare Roles
+                </a>
+            </nav>
+        </div>
+
+        <div class="mt-auto p-4 mb-2">
+            <div class="flex items-center gap-3 px-3 py-3 rounded-xl bg-primary-900/40 border border-primary-800/30">
+                <div class="w-8 h-8 rounded-full bg-cover bg-center shrink-0"
+                    style="background-image: url('https://api.dicebear.com/9.x/identicon/svg?seed={{ current_user.username }}')">
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold text-text-inverse truncate">{{ current_user.username }}</p>
+                    <p class="text-xs text-primary-300/80 truncate">{{ current_user.email }}</p>
+                </div>
+                <a href="{{ url_for('auth.logout') }}"
+                    class="p-1.5 rounded-lg text-text-light hover:text-rose-400 hover:bg-rose-950/50 transition-colors"
+                    title="Logout">
+                    <span class="material-symbols-outlined text-sm">logout</span>
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <!-- Top Navbar -->
+        <header
+            class="px-6 py-4 bg-surface border-b border-border-main flex justify-between items-center z-10 shrink-0 shadow-sm relative">
+            <div class="flex items-center gap-2 text-sm">
+                <span class="text-text-muted font-medium">Employee</span>
+                <span class="text-text-light font-bold">&gt;</span>
+                {% block breadcrumb %}
+                <span class="font-bold text-text-main">{{ active_page }}</span>
+                {% endblock %}
+            </div>
+
+            <div class="flex items-center space-x-2">
+                <div class="flex items-center gap-4">
+
+                    <!-- Notification Dropdown -->
+                    <details class="relative list-none group">
+                        <summary
+                            class="relative p-2 text-text-muted hover:text-text-muted hover:bg-background rounded-lg transition-all duration-200 cursor-pointer list-none appearance-none [&::-webkit-details-marker]:hidden hover:scale-105 active:scale-95">
+                            <span class="material-symbols-outlined">notifications</span>
+                            <!-- Static notification badge -->
+                            <span
+                                class="absolute top-2 right-2 size-2 bg-blue-600 rounded-full border-2 border-surface"></span>
+                        </summary>
+
+                        <div
+                            class="absolute right-0 mt-2 w-80 bg-surface border border-border-main rounded-xl shadow-xl z-50 overflow-hidden">
+                            <div
+                                class="p-4 border-b border-border-main flex justify-between items-center bg-background/50">
+                                <h4 class="font-bold text-sm text-text-main">Notifications</h4>
+                                <span class="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-bold">3
+                                    NEW</span>
+                            </div>
+
+                            <div class="max-h-80 overflow-y-auto divide-y divide-background scrollbar-thin">
+                                <div class="p-6 text-center">
+                                    <p class="text-xs text-text-muted">No new notifications.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+
+                    <!-- Help Button -->
+                    <button
+                        class="p-2 text-text-muted hover:text-text-muted hover:bg-background rounded-lg transition-all duration-200 hover:scale-105 active:scale-95">
+                        <span class="material-symbols-outlined">help</span>
+                    </button>
+
+                    <!-- Divider -->
+                    <div class="h-6 w-[1px] bg-border-main"></div>
+
+                    <!-- User Profile -->
+                    <div class="flex items-center gap-3 cursor-pointer group">
+                        <div class="text-right">
+                            <p class="text-sm font-bold text-text-main group-hover:text-blue-600 transition-colors">{{
+                                current_user.username }}</p>
+                            <p class="text-[10px] text-text-muted uppercase tracking-wider font-semibold">{{
+                                current_user.role }}</p>
+                        </div>
+                        <div
+                            class="size-9 rounded-full border-2 border-blue-600/20 p-[2px] transition-all duration-300 group-hover:scale-105 group-hover:border-blue-600/40 shadow-sm">
+                            <div class="w-full h-full rounded-full bg-cover bg-center bg-border-main"
+                                style="background-image: url('https://api.dicebear.com/9.x/identicon/svg?seed={{ current_user.username }}')">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Scrollable Content -->
+        <div class="flex-1 overflow-y-auto py-8">
+            {% block employee_content %}{% endblock %}
+        </div>
+    </main>
 </div>
-{% endif %}
-{% endwith %}
-
-{% block employee_content %}{% endblock %}
 {% endblock %}

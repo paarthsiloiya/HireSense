@@ -2,71 +2,313 @@
 {% block title %} – Employee Dashboard{% endblock %}
 
 {% block employee_content %}
-<h1>Employee Dashboard</h1>
-<p>Welcome, {{ current_user.username }}.</p>
+<div class="px-6 pb-6">
+    <!-- Welcome Header -->
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-text-main">Welcome back, {{ current_user.username }}!</h1>
+        <p class="text-text-muted mt-1">Here's your overview for today</p>
+    </div>
 
-<h2>My Assignments ({{ assignments|length }} active)</h2>
-{% if assignments %}
-<table border="1" cellpadding="8" style="width: 100%;">
-    <tr>
-        <th>Project</th>
-        <th>Manager</th>
-        <th>Role</th>
-        <th>Status</th>
-        <th>Assigned</th>
-    </tr>
-    {% for assignment in assignments[:5] %}
-    <tr>
-        <td><a href="{{ url_for('employee.view_assignment', assignment_id=assignment.assignment_id) }}">{{
-                assignment.project_title }}</a></td>
-        <td>{{ assignment.manager_name }}</td>
-        <td>{{ assignment.role_in_project or '-' }}</td>
-        <td>{{ assignment.project_status }}</td>
-        <td>{{ assignment.allotted_date.strftime('%Y-%m-%d') if assignment.allotted_date else '-' }}</td>
-    </tr>
-    {% endfor %}
-</table>
-{% if assignments|length > 5 %}
-<p><a href="{{ url_for('employee.list_assignments') }}">View all assignments...</a></p>
-{% endif %}
-{% else %}
-<p>No active project assignments.</p>
-{% endif %}
+    <!-- 2x2 Bento Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-<h2>My Skills ({{ skills|length }})</h2>
-{% if skills %}
-<ul>
-    {% for skill in skills[:5] %}
-    <li>{{ skill.skill_name }} - Level {{ skill.proficiency_level }}/5 {{ '(Verified)' if skill.is_verified else '' }}
-    </li>
-    {% endfor %}
-    {% if skills|length > 5 %}
-    <li><a href="{{ url_for('employee.my_skills') }}">...and {{ skills|length - 5 }} more</a></li>
-    {% endif %}
-</ul>
-{% else %}
-<p>No skills added. <a href="{{ url_for('employee.my_skills') }}">Add skills</a></p>
-{% endif %}
+        <!-- Card 1: My Assignments -->
+        <div
+            class="bg-surface rounded-xl border border-border-main shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
+            <div class="px-6 py-5 border-b border-border-main flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-primary-600 text-[24px]">assignment</span>
+                    <h3 class="text-lg font-bold text-text-main">My Assignments</h3>
+                </div>
+                <span class="text-xs font-bold text-text-muted bg-background px-3 py-1 rounded-full">
+                    {{ assignments|length }} Active
+                </span>
+            </div>
 
-<h2>My Resume</h2>
-{% if resume %}
-<p>
-    <strong>File:</strong> {{ resume.original_filename or 'Resume' }}<br>
-    <strong>Updated:</strong> {{ resume.last_updated.strftime('%Y-%m-%d %H:%M') if resume.last_updated else '-' }}
-</p>
-<p><a href="{{ url_for('employee.view_resume') }}">Manage resume</a></p>
-{% else %}
-<p>No resume uploaded. <a href="{{ url_for('employee.upload_resume') }}">Upload resume</a></p>
-{% endif %}
+            <div class="p-0 max-h-80 overflow-y-auto">
+                {% if assignments %}
+                <table class="w-full text-left border-collapse">
+                    <thead class="sticky top-0 z-10 bg-background">
+                        <tr class="text-xs uppercase text-text-muted tracking-widest font-bold">
+                            <th class="px-6 py-3">Project</th>
+                            <th class="px-6 py-3">Role</th>
+                            <th class="px-6 py-3">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-surface">
+                        {% for assignment in assignments[:5] %}
+                        <tr class="hover:bg-background transition-colors duration-150 cursor-pointer border-b border-border-main last:border-b-0"
+                            onclick="window.location='{{ url_for('employee.view_assignment', assignment_id=assignment.assignment_id) }}'">
+                            <td class="px-6 py-4">
+                                <div class="flex flex-col">
+                                    <span class="font-medium text-sm text-text-main">{{ assignment.project_title
+                                        }}</span>
+                                    <span class="text-xs text-text-muted">{{ assignment.manager_name }}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-muted">{{ assignment.role_in_project or '-' }}</td>
+                            <td class="px-6 py-4">
+                                <span class="text-xs font-medium px-2 py-1 rounded-full
+                                        {% if assignment.project_status == 'active' %}bg-primary-100 text-primary-700
+                                        {% elif assignment.project_status == 'completed' %}bg-gray-100 text-gray-700
+                                        {% else %}bg-blue-100 text-blue-700{% endif %}">
+                                    {{ assignment.project_status }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="p-8 text-center">
+                    <span class="material-symbols-outlined text-text-light text-[48px] mb-2 block">assignment</span>
+                    <p class="text-sm text-text-muted">No active assignments</p>
+                    <p class="text-xs text-text-light mt-1">New assignments will appear here</p>
+                </div>
+                {% endif %}
+            </div>
 
-<h2>Active Learning Path</h2>
-{% if active_path %}
-<p>
-    <strong>Target Role:</strong> {{ active_path.target_role }}<br>
-    <strong>Status:</strong> {{ active_path.status }}<br>
-    <a href="{{ url_for('employee.view_learning_path', path_id=active_path.id) }}">View Details</a>
-</p>
-{% else %}
-<p>No active learning path. <a href="{{ url_for('employee.learning_paths') }}">Generate one</a></p>
-{% endif %}
+            {% if assignments|length > 5 %}
+            <div class="px-6 py-4 bg-background/50 border-t border-border-main">
+                <a href="{{ url_for('employee.list_assignments') }}"
+                    class="text-primary-600 text-sm font-bold hover:underline transition-colors">
+                    View all {{ assignments|length }} assignments →
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Card 2: My Skills Summary -->
+        <div
+            class="bg-surface rounded-xl border border-border-main shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
+            <div class="px-6 py-5 border-b border-border-main flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-primary-600 text-[24px]">psychology</span>
+                    <h3 class="text-lg font-bold text-text-main">My Skills</h3>
+                </div>
+                <span class="text-xs font-bold text-text-muted bg-background px-3 py-1 rounded-full">
+                    {{ skills|length }} Skills
+                </span>
+            </div>
+
+            <div class="p-6 max-h-80 overflow-y-auto">
+                {% if skills %}
+                <div class="space-y-4">
+                    {% for skill in skills[:6] %}
+                    <div
+                        class="flex items-center justify-between group hover:bg-background p-3 rounded-lg transition-all duration-200">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2">
+                                <span class="font-medium text-sm text-text-main">{{ skill.skill_name }}</span>
+                                {% if skill.is_verified %}
+                                <span class="material-symbols-outlined text-primary-600 text-[16px]"
+                                    title="Verified">verified</span>
+                                {% endif %}
+                            </div>
+                            <div class="flex items-center gap-1 mt-1">
+                                {% for i in range(1, 6) %}
+                                <div
+                                    class="w-8 h-1.5 rounded-full transition-all duration-200
+                                        {% if i <= skill.proficiency_level %}bg-primary-600{% else %}bg-gray-200{% endif %}">
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <span class="text-xs font-bold text-text-muted ml-4">{{ skill.proficiency_level }}/5</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-8">
+                    <span class="material-symbols-outlined text-text-light text-[48px] mb-2 block">psychology</span>
+                    <p class="text-sm text-text-muted mb-3">No skills added yet</p>
+                    <a href="{{ url_for('employee.my_skills') }}"
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-text-inverse text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors hover:scale-105">
+                        <span class="material-symbols-outlined text-[16px]">add</span>
+                        Add your first skill
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if skills|length > 6 %}
+            <div class="px-6 py-4 bg-background/50 border-t border-border-main">
+                <a href="{{ url_for('employee.my_skills') }}"
+                    class="text-primary-600 text-sm font-bold hover:underline transition-colors">
+                    View all {{ skills|length }} skills →
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Card 3: My Resume Status -->
+        <div
+            class="bg-surface rounded-xl border border-border-main shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
+            <div class="px-6 py-5 border-b border-border-main flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-primary-600 text-[24px]">description</span>
+                    <h3 class="text-lg font-bold text-text-main">My Resume</h3>
+                </div>
+                {% if resume %}
+                <span class="text-xs font-bold text-primary-600 bg-primary-50 px-3 py-1 rounded-full">
+                    Uploaded
+                </span>
+                {% else %}
+                <span class="text-xs font-bold text-text-muted bg-background px-3 py-1 rounded-full">
+                    Not Uploaded
+                </span>
+                {% endif %}
+            </div>
+
+            <div class="p-6">
+                {% if resume %}
+                <div class="space-y-4">
+                    <div class="flex items-start gap-4 p-4 bg-background rounded-lg">
+                        <div class="p-3 bg-primary-100 rounded-lg shrink-0">
+                            <span class="material-symbols-outlined text-primary-700 text-[32px]">description</span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-bold text-text-main text-sm truncate mb-1">
+                                {{ resume.original_filename or 'Resume.pdf' }}
+                            </p>
+                            <p class="text-xs text-text-muted mb-3">
+                                Last updated: {{ resume.last_updated.strftime('%B %d, %Y') if resume.last_updated else
+                                'N/A' }}
+                            </p>
+                            <div class="flex gap-2">
+                                <a href="{{ url_for('employee.download_resume') }}"
+                                    class="inline-flex items-center gap-1 px-3 py-1.5 bg-primary-600 text-text-inverse text-xs font-medium rounded-lg hover:bg-primary-700 transition-all duration-200 hover:scale-105">
+                                    <span class="material-symbols-outlined text-[14px]">download</span>
+                                    Download
+                                </a>
+                                <a href="{{ url_for('employee.view_resume') }}"
+                                    class="inline-flex items-center gap-1 px-3 py-1.5 border border-border-main text-text-main text-xs font-medium rounded-lg hover:bg-background transition-colors">
+                                    <span class="material-symbols-outlined text-[14px]">visibility</span>
+                                    View
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-4 bg-primary-50 rounded-lg border border-primary-100">
+                        <div class="flex items-start gap-3">
+                            <span class="material-symbols-outlined text-primary-600 text-[20px] shrink-0">info</span>
+                            <div>
+                                <p class="text-xs font-bold text-primary-800 mb-1">Resume Tip</p>
+                                <p class="text-xs text-primary-700 leading-relaxed">
+                                    Keep your resume updated with recent projects and skills for better matches.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-8">
+                    <span class="material-symbols-outlined text-text-light text-[48px] mb-2 block">upload_file</span>
+                    <p class="text-sm text-text-muted mb-1">No resume uploaded</p>
+                    <p class="text-xs text-text-light mb-4">Upload your resume to get started</p>
+                    <a href="{{ url_for('employee.upload_resume') }}"
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-text-inverse text-sm font-medium rounded-lg hover:bg-primary-700 transition-all duration-200 hover:scale-105">
+                        <span class="material-symbols-outlined text-[16px]">upload</span>
+                        Upload Resume
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Card 4: Active Learning Path -->
+        <div
+            class="bg-surface rounded-xl border border-border-main shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
+            <div class="px-6 py-5 border-b border-border-main flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-primary-600 text-[24px]">school</span>
+                    <h3 class="text-lg font-bold text-text-main">Learning Path</h3>
+                </div>
+                {% if active_path %}
+                <span class="text-xs font-bold text-primary-600 bg-primary-50 px-3 py-1 rounded-full">
+                    {{ active_path.status|title }}
+                </span>
+                {% else %}
+                <span class="text-xs font-bold text-text-muted bg-background px-3 py-1 rounded-full">
+                    Not Started
+                </span>
+                {% endif %}
+            </div>
+
+            <div class="p-6">
+                {% if active_path %}
+                <div class="space-y-4">
+                    <div class="p-4 bg-gradient-to-br from-primary-50 to-blue-50 rounded-lg border border-primary-100">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="p-2 bg-primary-600 rounded-lg">
+                                <span class="material-symbols-outlined text-text-inverse text-[20px]">target</span>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-xs text-text-muted font-medium uppercase tracking-wide">Target Role</p>
+                                <p class="font-bold text-text-main">{{ active_path.target_role }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Static Progress Bar -->
+                        <div class="mt-4">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-medium text-text-muted">Progress</span>
+                                <span class="text-xs font-bold text-primary-700">35%</span>
+                            </div>
+                            <div class="w-full bg-background h-2 rounded-full overflow-hidden">
+                                <div class="bg-primary-600 h-full w-[35%] transition-all duration-500"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <a href="{{ url_for('employee.view_learning_path', path_id=active_path.id) }}"
+                            class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-600 text-text-inverse text-sm font-medium rounded-lg hover:bg-primary-700 transition-all duration-200 hover:scale-105">
+                            <span class="material-symbols-outlined text-[16px]">visibility</span>
+                            View Learning Path
+                        </a>
+                        <a href="{{ url_for('employee.compare_roles') }}"
+                            class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-border-main text-text-main text-sm font-medium rounded-lg hover:bg-background transition-colors">
+                            <span class="material-symbols-outlined text-[16px]">compare_arrows</span>
+                            Compare Roles
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-8">
+                    <span class="material-symbols-outlined text-text-light text-[48px] mb-2 block">school</span>
+                    <p class="text-sm text-text-muted mb-1">No active learning path</p>
+                    <p class="text-xs text-text-light mb-4">Generate a learning path to advance your career</p>
+                    <a href="{{ url_for('employee.learning_paths') }}"
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-text-inverse text-sm font-medium rounded-lg hover:bg-primary-700 transition-all duration-200 hover:scale-105">
+                        <span class="material-symbols-outlined text-[16px]">add</span>
+                        Generate Path
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Optional: Help Center Card -->
+    <div class="mt-6 bg-gradient-to-r from-blue-50 to-primary-50 rounded-xl border border-blue-100 p-6">
+        <div class="flex items-start gap-4">
+            <div class="p-3 bg-blue-600 rounded-xl shrink-0">
+                <span class="material-symbols-outlined text-text-inverse text-[28px]">help</span>
+            </div>
+            <div class="flex-1">
+                <h4 class="font-bold text-text-main mb-1">Need Help?</h4>
+                <p class="text-sm text-text-muted mb-3">
+                    Access our help center for guides, tutorials, and support resources.
+                </p>
+                <button
+                    class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-text-inverse text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                    <span class="material-symbols-outlined text-[16px]">open_in_new</span>
+                    Visit Help Center
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

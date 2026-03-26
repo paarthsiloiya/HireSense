@@ -1,90 +1,318 @@
 {% extends "employee/employee_base.html" %}
 {% block title %} – Assignment Details{% endblock %}
 
+{% block breadcrumb %}
+<a href="{{ url_for('employee.list_assignments') }}"
+    class="text-text-muted hover:text-primary-600 transition-colors font-medium">Assignments</a>
+<span class="text-text-light font-bold">&gt;</span>
+<span class="font-bold text-text-main">Assignment Detail</span>
+{% endblock %}
+
 {% block employee_content %}
-<h1>Assignment: {{ assignment.project.title }}</h1>
+<div class="px-8 max-w-7xl mx-auto space-y-8">
+    <!-- Page Header Section -->
+    <section class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div class="space-y-3">
+            <a href="{{ url_for('employee.list_assignments') }}"
+                class="flex items-center gap-2 text-text-muted hover:text-primary-600 transition-colors w-max group">
+                <span
+                    class="material-symbols-outlined text-lg group-hover:-translate-x-1 duration-200">arrow_back</span>
+                <span class="text-sm font-medium">Back to Assignments</span>
+            </a>
+            <div>
+                <div class="flex items-center gap-3 mb-1">
+                    <span
+                        class="px-2.5 py-0.5 rounded-full bg-primary-100 text-primary-800 text-[10px] font-bold uppercase tracking-wider border border-primary-200">{{
+                        assignment.project.status }}</span>
+                    <span class="text-text-light text-sm font-medium">#PJ-{{ "%04d" % assignment.project.id }}</span>
+                </div>
+                <h2 class="text-4xl font-extrabold text-text-main tracking-tight">{{ assignment.project.title }}</h2>
+            </div>
+        </div>
+        <div class="flex gap-3">
+            <button
+                class="px-6 py-2.5 bg-surface text-text-main border border-border-main font-semibold rounded-lg hover:bg-background transition-colors hover:-translate-y-0.5 duration-200">
+                Download Specs
+            </button>
+            <button
+                class="px-6 py-2.5 bg-primary-600 text-text-inverse font-semibold rounded-lg shadow-sm hover:bg-primary-700 transition-all hover:-translate-y-0.5 duration-200">
+                Submit Milestone
+            </button>
+        </div>
+    </section>
 
-<p><a href="{{ url_for('employee.list_assignments') }}">&larr; Back to Assignments</a></p>
+    <!-- Top Row: Information Bento -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Description Card -->
+        <div
+            class="lg:col-span-2 p-6 rounded-xl bg-surface shadow-sm border border-border-main hover:shadow-md transition-shadow duration-200">
+            <div class="flex items-center gap-2 mb-4 text-primary-600">
+                <span class="material-symbols-outlined text-xl">info</span>
+                <h3 class="text-lg font-bold text-text-main">Project Description</h3>
+            </div>
+            <p class="text-text-muted leading-relaxed text-sm">
+                {{ assignment.project.description or 'No description available for this project.' }}
+            </p>
+            <div class="mt-6 flex flex-wrap gap-4">
+                <div
+                    class="flex items-center gap-3 px-4 py-2 bg-primary-50 rounded-lg border border-primary-100 shadow-sm hover:-translate-y-0.5 transition-transform duration-200">
+                    <span class="material-symbols-outlined text-primary-700 text-xl">event</span>
+                    <div class="text-xs">
+                        <p class="text-primary-600 font-bold uppercase tracking-wider mb-0.5">Start Date</p>
+                        <p class="text-text-main font-extrabold text-sm">{{ assignment.project.start_date.strftime('%b
+                            %d, %Y') if assignment.project.start_date else 'Not set' }}</p>
+                    </div>
+                </div>
+                <div
+                    class="flex items-center gap-3 px-4 py-2 bg-primary-50 rounded-lg border border-primary-100 shadow-sm hover:-translate-y-0.5 transition-transform duration-200">
+                    <span class="material-symbols-outlined text-primary-700 text-xl">event_upcoming</span>
+                    <div class="text-xs">
+                        <p class="text-primary-600 font-bold uppercase tracking-wider mb-0.5">End Date</p>
+                        <p class="text-text-main font-extrabold text-sm">{{ assignment.project.end_date.strftime('%b %d,
+                            %Y') if assignment.project.end_date else 'Not set' }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-<h2>Project Details</h2>
-<table border="1" cellpadding="8">
-    <tr>
-        <td><strong>Project Title</strong></td>
-        <td>{{ assignment.project.title }}</td>
-    </tr>
-    <tr>
-        <td><strong>Description</strong></td>
-        <td>{{ assignment.project.description or 'No description' }}</td>
-    </tr>
-    <tr>
-        <td><strong>Project Status</strong></td>
-        <td>{{ assignment.project.status }}</td>
-    </tr>
-    <tr>
-        <td><strong>Manager</strong></td>
-        <td>{{ assignment.project.manager.username }}</td>
-    </tr>
-    <tr>
-        <td><strong>Start Date</strong></td>
-        <td>{{ assignment.project.start_date or 'Not set' }}</td>
-    </tr>
-    <tr>
-        <td><strong>End Date</strong></td>
-        <td>{{ assignment.project.end_date or 'Not set' }}</td>
-    </tr>
-</table>
+        <!-- Manager Contact Card -->
+        <div
+            class="p-6 rounded-xl bg-surface shadow-sm border border-border-main flex flex-col justify-between hover:shadow-md transition-shadow duration-200">
+            <div>
+                <div class="flex items-center gap-2 mb-4 text-primary-600">
+                    <span class="material-symbols-outlined text-xl">account_circle</span>
+                    <h3 class="text-lg font-bold text-text-main">Project Manager</h3>
+                </div>
+                <div class="flex items-center gap-4 group">
+                    <img src="https://api.dicebear.com/7.x/identicon/svg?seed={{ assignment.project.manager.username }}"
+                        alt="{{ assignment.project.manager.username }}"
+                        class="w-14 h-14 rounded-xl bg-primary-100 border border-primary-200 group-hover:scale-105 transition-transform duration-200" />
+                    <div>
+                        <p class="text-text-main font-bold text-base leading-none mb-1">{{
+                            assignment.project.manager.username }}</p>
+                        <p class="text-primary-600 text-xs font-medium mt-1">{{ assignment.project.manager.email }}</p>
+                    </div>
+                </div>
+            </div>
+            <button
+                class="mt-6 w-full py-2 bg-primary-50 text-primary-700 font-bold text-xs uppercase tracking-widest rounded-lg border border-primary-100 hover:bg-primary-100 hover:-translate-y-0.5 transition-all duration-200">
+                Schedule Sync
+            </button>
+        </div>
+    </div>
 
-<h2>My Assignment Details</h2>
-<table border="1" cellpadding="8">
-    <tr>
-        <td><strong>Role in Project</strong></td>
-        <td>{{ assignment.role_in_project or 'Not specified' }}</td>
-    </tr>
-    <tr>
-        <td><strong>Assignment Status</strong></td>
-        <td>{{ assignment.status }}</td>
-    </tr>
-    <tr>
-        <td><strong>Assigned Date</strong></td>
-        <td>{{ assignment.allotted_date.strftime('%Y-%m-%d %H:%M') if assignment.allotted_date else '-' }}</td>
-    </tr>
-</table>
+    <!-- Table 1: Role & Responsibilities -->
+    <section class="space-y-4">
+        <div class="flex items-center gap-2 text-primary-600">
+            <span class="material-symbols-outlined text-xl">task_alt</span>
+            <h3 class="text-xl font-bold text-text-main">My Role &amp; Responsibilities</h3>
+        </div>
+        <div class="overflow-hidden rounded-xl bg-surface border border-border-main shadow-sm">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-background border-b border-border-main">
+                        <th class="px-6 py-4 text-[0.75rem] font-bold uppercase tracking-wider text-text-muted">
+                            Responsibility / Role</th>
+                        <th class="px-6 py-4 text-[0.75rem] font-bold uppercase tracking-wider text-text-muted">Key
+                            Deliverable</th>
+                        <th class="px-6 py-4 text-[0.75rem] font-bold uppercase tracking-wider text-text-muted">Status
+                        </th>
+                        <th
+                            class="px-6 py-4 text-[0.75rem] font-bold uppercase tracking-wider text-text-muted text-right">
+                            Assigned Date</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-border-main/50">
+                    <tr class="hover:bg-background/50 transition-colors group cursor-default">
+                        <td class="px-6 py-5">
+                            <p class="text-text-main font-semibold text-sm">{{ assignment.role_in_project or 'Not
+                                specified' }}</p>
+                            <p class="text-text-muted text-xs mt-1">General role assigned for this project.</p>
+                        </td>
+                        <td class="px-6 py-5">
+                            <span class="text-text-muted text-sm">Main Assignment</span>
+                        </td>
+                        <td class="px-6 py-5">
+                            <span
+                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ 'bg-success-50 text-success-800 border border-success-200' if assignment.status == 'Approved' else 'bg-primary-50 text-primary-800 border border-primary-200' if assignment.status == 'Active' else 'bg-gray-100 text-gray-800 border border-gray-200' }}">
+                                {{ assignment.status }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-5 text-right">
+                            <span class="text-text-main font-medium text-sm">{{ assignment.allotted_date.strftime('%b
+                                %d, %Y') if assignment.allotted_date else '-' }}</span>
+                        </td>
+                    </tr>
+                    <!-- Placeholder Rows for Deliverables (Static) -->
+                    <tr class="hover:bg-background/50 transition-colors group cursor-default">
+                        <td class="px-6 py-5">
+                            <p class="text-text-main font-semibold text-sm">Feature Implementation</p>
+                            <p class="text-text-muted text-xs mt-1">Develop required features according to spec.</p>
+                        </td>
+                        <td class="px-6 py-5">
+                            <span class="text-text-muted text-sm">Sprint 1 Target</span>
+                        </td>
+                        <td class="px-6 py-5">
+                            <span
+                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-info-50 text-info-800 border border-info-200">In
+                                Progress</span>
+                        </td>
+                        <td class="px-6 py-5 text-right">
+                            <span class="text-text-main font-medium text-sm">-</span>
+                        </td>
+                    </tr>
+                    <tr class="hover:bg-background/50 transition-colors group cursor-default">
+                        <td class="px-6 py-5">
+                            <p class="text-text-main font-semibold text-sm">Documentation & Testing</p>
+                            <p class="text-text-muted text-xs mt-1">Ensure code meets quality standards.</p>
+                        </td>
+                        <td class="px-6 py-5">
+                            <span class="text-text-muted text-sm">Final Release Docs</span>
+                        </td>
+                        <td class="px-6 py-5">
+                            <span
+                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-background text-text-light border border-border-main">Pending</span>
+                        </td>
+                        <td class="px-6 py-5 text-right">
+                            <span class="text-text-main font-medium text-sm">-</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
 
-<h2>Required Skills</h2>
-{% if skill_requirements %}
-<table border="1" cellpadding="8" style="width: 100%;">
-    <tr>
-        <th>Skill</th>
-        <th>Category</th>
-        <th>Required Level</th>
-        <th>Mandatory</th>
-        <th>Your Level</th>
-        <th>Status</th>
-    </tr>
-    {% for skill in skill_requirements %}
-    {% set has_skill = skill.skill_id in my_skill_ids %}
-    {% set my_skill = my_skills|selectattr('skill_id', 'equalto', skill.skill_id)|first if has_skill else None %}
-    <tr
-        style="{% if has_skill and my_skill.proficiency_level >= skill.minimum_proficiency %}background-color: #d4edda;{% elif skill.is_mandatory %}background-color: #f8d7da;{% else %}background-color: #fff3cd;{% endif %}">
-        <td>{{ skill.skill_name }}</td>
-        <td>{{ skill.category or '-' }}</td>
-        <td>{{ skill.minimum_proficiency }}/5</td>
-        <td>{{ 'Yes' if skill.is_mandatory else 'No' }}</td>
-        <td>{{ my_skill.proficiency_level if my_skill else '0' }}/5</td>
-        <td>
-            {% if has_skill and my_skill.proficiency_level >= skill.minimum_proficiency %}
-            Met
-            {% elif has_skill %}
-            Needs improvement
+    <!-- Table 2: Required Skills (Match/Gap logic) -->
+    <section class="space-y-4">
+        <div class="flex items-center gap-2 text-primary-600">
+            <span class="material-symbols-outlined text-xl">psychology</span>
+            <h3 class="text-xl font-bold text-text-main">Required Skills for My Role</h3>
+        </div>
+
+        {% if skill_requirements %}
+        <div class="overflow-hidden rounded-xl bg-surface border border-border-main shadow-sm">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-background border-b border-border-main">
+                        <th class="px-6 py-4 text-[0.75rem] font-bold uppercase tracking-wider text-text-muted">Skill
+                            Name</th>
+                        <th class="px-6 py-4 text-[0.75rem] font-bold uppercase tracking-wider text-text-muted">Category
+                        </th>
+                        <th
+                            class="px-6 py-4 text-[0.75rem] font-bold uppercase tracking-wider text-text-muted text-center">
+                            Required Level</th>
+                        <th
+                            class="px-6 py-4 text-[0.75rem] font-bold uppercase tracking-wider text-text-muted text-center">
+                            My Level</th>
+                        <th
+                            class="px-6 py-4 text-[0.75rem] font-bold uppercase tracking-wider text-text-muted text-right">
+                            Assessment</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-border-main/50">
+                    {% for skill in skill_requirements %}
+                    {% set has_skill = skill.skill_id in my_skill_ids %}
+                    {% set my_skill = my_skills|selectattr('skill_id', 'equalto', skill.skill_id)|first if has_skill
+                    else None %}
+                    {% set is_match = has_skill and (my_skill.proficiency_level|int >= skill.minimum_proficiency|int) %}
+
+                    <tr
+                        class="transition-colors {{ 'bg-success-50/30 hover:bg-success-50/50' if is_match else 'hover:bg-background/50' }}">
+                        <td class="px-6 py-3.5">
+                            <span class="font-bold text-text-main">{{ skill.skill_name }}</span>
+                            {% if skill.is_mandatory %}
+                            <span
+                                class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium text-text-muted bg-background border border-border-main shadow-sm">Mandatory</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-3.5 text-text-muted text-sm">{{ skill.category or '-' }}</td>
+                        <td class="px-6 py-3.5 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <div class="flex justify-center gap-1">
+                                    {% for i in range(5) %}
+                                    <span
+                                        class="w-2.5 h-2.5 rounded-full {{ 'bg-primary-600' if i < (skill.minimum_proficiency|int) else 'bg-border-main' }}"></span>
+                                    {% endfor %}
+                                </div>
+                                <span class="text-[10px] text-text-muted font-bold">{{ skill.minimum_proficiency
+                                    }}/5</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-3.5 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <div class="flex justify-center gap-1">
+                                    {% set my_level = (my_skill.proficiency_level|int) if has_skill else 0 %}
+                                    {% for i in range(5) %}
+                                    <span
+                                        class="w-2.5 h-2.5 rounded-full {{ 'bg-primary-600' if i < my_level else 'bg-border-main' }}"></span>
+                                    {% endfor %}
+                                </div>
+                                <span class="text-[10px] text-text-muted font-bold">{{ my_level }}/5</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-3.5 text-right">
+                            <div class="flex justify-end">
+                                {% if is_match %}
+                                <span
+                                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-success-50 text-success-800 border border-success-200">
+                                    <span class="material-symbols-outlined text-sm">check_circle</span>
+                                    Match
+                                </span>
+                                {% elif has_skill %}
+                                <span
+                                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-danger-50 text-danger-800 border border-danger-200">
+                                    <span class="material-symbols-outlined text-sm">warning</span>
+                                    Gap Detected
+                                </span>
+                                {% else %}
+                                <span
+                                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-danger-50 text-danger-800 border border-danger-200">
+                                    <span class="material-symbols-outlined text-sm">error</span>
+                                    Missing
+                                </span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-6 rounded-xl bg-surface border border-border-main shadow-sm text-center">
+            <p class="text-text-muted">No specific skill requirements setup for this project.</p>
+        </div>
+        {% endif %}
+    </section>
+
+    <!-- Table 3: Project Team -->
+    <section class="space-y-4">
+        <div class="flex items-center gap-2 text-primary-600">
+            <span class="material-symbols-outlined text-xl">groups</span>
+            <h3 class="text-xl font-bold text-text-main">Project Team</h3>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {% for team_member in assignment.project.assignments %}
+            <!-- Team Card -->
+            <div
+                class="bg-surface p-5 rounded-xl shadow-sm border border-border-main flex items-center gap-4 group hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer duration-200">
+                <img class="w-12 h-12 rounded-full object-cover bg-primary-50 border border-primary-200" alt="portrait"
+                    src="https://api.dicebear.com/7.x/identicon/svg?seed={{ team_member.user.username }}" />
+                <div>
+                    <p
+                        class="text-text-main font-bold text-sm leading-tight group-hover:text-primary-600 transition-colors">
+                        {{ team_member.user.username }}</p>
+                    <p class="text-text-muted text-[10px] uppercase tracking-widest font-bold mt-0.5">{{
+                        team_member.role_in_project or 'Member' }}</p>
+                </div>
+            </div>
             {% else %}
-            Missing
-            {% endif %}
-        </td>
-    </tr>
-    {% endfor %}
-</table>
-<p><small>Green = requirement met, Red = mandatory missing, Yellow = optional missing</small></p>
-{% else %}
-<p>No specific skill requirements for this project.</p>
-{% endif %}
+            <div class="col-span-full p-4 text-center text-text-muted border border-border-main rounded-xl bg-surface">
+                No team members assigned yet.
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+</div>
 {% endblock %}

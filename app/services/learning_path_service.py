@@ -324,3 +324,130 @@ class LearningPathService:
             return "6-12 months"
         else:
             return "12+ months"
+
+    @staticmethod
+    def mark_skill_complete(path_id: int, skill_name: str, user_id: int) -> Dict:
+        """
+        Mark a skill as completed in a learning path.
+
+        This will:
+        1. Update the generated_content JSON to mark the skill as completed
+        2. Add/update the skill in the user's profile (UserSkill)
+        3. Recalculate and return the new progress percentage
+        """
+        path = db.session.get(LearningPath, path_id)
+        if not path:
+            raise ValueError("Learning path not found")
+
+        if path.user_id != user_id:
+            raise ValueError("Unauthorized access to learning path")
+
+        if path.status != "active":
+            raise ValueError("Cannot modify a non-active learning path")
+
+        # Parse existing content
+        content = json.loads(path.generated_content) if path.generated_content else {}
+        recommendations = content.get("recommendations", [])
+
+        # Find and update the skill
+        skill_found = False
+        for rec in recommendations:
+            if rec["skill_name"].lower() == skill_name.lower():
+                rec["completed"] = True
+                rec["completed_at"] = datetime.utcnow().isoformat()
+                skill_found = True
+                break
+
+        if not skill_found:
+            raise ValueError(f"Skill '{skill_name}' not found in this learning path")
+
+        # Add skill to user's profile if not already present
+        skill = Skill.query.filter(
+            db.func.lower(Skill.name) == skill_name.lower()
+        ).first()
+
+        if skill:
+            existing_user_skill = UserSkill.query.filter_by(
+                user_id=user_id, skill_id=skill.id
+            ).first()
+
+            if existing_user_skill:
+                # Update proficiency to target level if current is less
+                target_level = next(
+                    (r["target_level"] for r in recommendations
+                     if r["skill_name"].lower() == skill_name.lower()),
+                    3
+                )
+                if existing_user_skill.proficiency_level < target_level:
+                    existing_user_skill.proficiency_level = target_level
+                    existing_user_skill.is_verified = False
+            else:
+                # Add new skill with target proficiency level
+                target_level = next(
+                    (r["target_level"] for r in recommendations
+                     if r["skill_name"].lower() == skill_name.lower()),
+                    3
+                )
+                new_user_skill = UserSkill(
+                    user_id=user_id,
+                    skill_id=skill.id,
+                    proficiency_level=target_level,
+                    is_verified=False,
+                )
+                db.session.add(new_user_skill)
+
+        # Calculate new progress
+        total_skills = len(recommendations)
+        completed_skills = sum(1 for r in recommendations if r.get("completed", False))
+        progress_percentage = int((completed_skills / total_skills * 100)) if total_skills > 0 else 0
+
+        # Update content with new progress
+        content["recommendations"] = recommendations
+        content["progress_percentage"] = progress_percentage
+        content["completed_skills_count"] = completed_skills
+        content["total_skills_count"] = total_skills
+
+        # Auto-complete learning path if all skills are done
+        if progress_percentage == 100:
+            path.status = "completed"
+
+        path.generated_content = json.dumps(content)
+        db.session.commit()
+
+        return {
+            "skill_name": skill_name,
+            "progress_percentage": progress_percentage,
+            "completed_skills": completed_skills,
+            "total_skills": total_skills,
+            "path_completed": progress_percentage == 100,
+        }
+
+    @staticmethod
+    def get_path_progress(path: LearningPath) -> Dict:
+        """
+        Get the progress information for a learning path.
+        """
+        if not path.generated_content:
+            return {"percentage": 0, "completed": 0, "total": 0}
+
+        content = json.loads(path.generated_content)
+        recommendations = content.get("recommendations", [])
+
+        # Check if progress is already calculated
+        if "progress_percentage" in content:
+            return {
+                "percentage": content["progress_percentage"],
+                "completed": content.get("completed_skills_count", 0),
+                "total": content.get("total_skills_count", len(recommendations)),
+            }
+
+        # Calculate progress from recommendations
+        total_skills = len(recommendations)
+        completed_skills = sum(1 for r in recommendations if r.get("completed", False))
+        progress_percentage = int((completed_skills / total_skills * 100)) if total_skills > 0 else 0
+
+        return {
+            "percentage": progress_percentage,
+            "completed": completed_skills,
+            "total": total_skills,
+        }
