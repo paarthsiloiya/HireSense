@@ -532,6 +532,33 @@ def blacklist_user(user_id):
     return redirect(url_for("admin.manage_users"))
 
 
+@admin_bp.route("/blacklisted")
+@admin_required
+def view_blacklisted_users():
+    """View all blacklisted users."""
+    users = User.query.filter_by(is_blacklisted=True).all()
+    return render_template(
+        "admin/blacklisted_users.html",
+        users=users,
+        active_page="Blacklisted Users",
+    )
+
+
+@admin_bp.route("/whitelist/<int:user_id>", methods=["POST"])
+@admin_required
+def whitelist_user(user_id):
+    """Whitelist a blacklisted user (remove blacklist status)."""
+    user = db.session.get(User, user_id)
+    if user is None:
+        abort(404)
+
+    user.is_blacklisted = False
+    user.is_active = True
+    db.session.commit()
+    notify_admin(f"User '{user.username}' whitelisted.", "success")
+    return redirect(url_for("admin.view_blacklisted_users"))
+
+
 # ---------------------------------------------------------------------------
 # Credential reset
 # ---------------------------------------------------------------------------
