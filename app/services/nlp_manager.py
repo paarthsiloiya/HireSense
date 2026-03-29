@@ -76,11 +76,9 @@ class NLPManager:
         Fallback chain:
             configured model  →  en_core_web_md  →  en_core_web_sm  →  auto-download sm
 
-        Returns:
-            spacy.Language instance.
-
-        Raises:
-            RuntimeError: if no spaCy model can be loaded at all.
+        :returns: spacy.Language instance.
+        :rtype: spacy.Language
+        :raises RuntimeError: if no spaCy model can be loaded at all.
         """
         if self._spacy_model is not None:
             return self._spacy_model
@@ -123,11 +121,9 @@ class NLPManager:
         Used by SkillService.compute_semantic_similarity() and
         LearningPathService._generate_ai_learning_path().
 
-        Returns:
-            SentenceTransformer instance.
-
-        Raises:
-            ImportError: if sentence-transformers is not installed.
+        :returns: SentenceTransformer instance.
+        :rtype: SentenceTransformer
+        :raises ImportError: if sentence-transformers is not installed.
         """
         if self._sentence_transformer is not None:
             return self._sentence_transformer

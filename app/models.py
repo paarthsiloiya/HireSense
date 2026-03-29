@@ -5,7 +5,16 @@ from . import db, login_manager
 
 
 class Department(db.Model):
-    """Organizational department for users."""
+    """
+    Organizational department for users.
+
+    Represents a department within the organization that users can belong to.
+
+    :ivar id: Unique identifier for the department.
+    :ivar name: Name of the department (unique).
+    :ivar created_at: Timestamp when the department was created.
+    :ivar users: Relationship to users in this department.
+    """
     __tablename__ = "departments"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -20,7 +29,18 @@ class Department(db.Model):
 
 
 class Skill(db.Model):
-    """Skills catalog for matching and gap analysis."""
+    """
+    Skills catalog for matching and gap analysis.
+
+    Represents a skill that can be associated with users and projects.
+
+    :ivar id: Unique identifier for the skill.
+    :ivar name: Name of the skill (unique).
+    :ivar category: Category of the skill (e.g., technical, soft, domain).
+    :ivar created_at: Timestamp when the skill was created.
+    :ivar user_skills: Relationship to user skills.
+    :ivar project_skills: Relationship to project skills.
+    """
     __tablename__ = "skills"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -37,6 +57,31 @@ class Skill(db.Model):
 
 
 class User(UserMixin, db.Model):
+    """
+    User model representing system users.
+
+    Inherits from UserMixin for Flask-Login integration.
+
+    :ivar id: Unique identifier for the user.
+    :ivar username: Username of the user.
+    :ivar email: Email address of the user (unique).
+    :ivar password_hash: Hashed password.
+    :ivar role: Role of the user (admin, manager, employee).
+    :ivar is_active: Whether the user account is active.
+    :ivar is_approved: Whether the user is approved by admin.
+    :ivar is_blacklisted: Whether the user is blacklisted.
+    :ivar created_at: Timestamp when the user was created.
+    :ivar updated_at: Timestamp when the user was last updated.
+    :ivar department_id: Foreign key to department.
+    :ivar job_title: Job title of the user.
+    :ivar department: Relationship to department.
+    :ivar notifications: Relationship to notifications.
+    :ivar resume: Relationship to resume.
+    :ivar user_skills: Relationship to user skills.
+    :ivar learning_paths: Relationship to learning paths.
+    :ivar managed_projects: Relationship to managed projects.
+    :ivar project_assignments: Relationship to project assignments.
+    """
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -64,9 +109,23 @@ class User(UserMixin, db.Model):
     project_assignments = db.relationship("ProjectAssignment", back_populates="user", lazy="dynamic", cascade="all, delete-orphan")
 
     def set_password(self, password: str) -> None:
+        """
+        Set the user's password.
+
+        :param password: The plain text password to hash and set.
+        :type password: str
+        """
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password: str) -> bool:
+        """
+        Check if the provided password matches the user's password.
+
+        :param password: The plain text password to check.
+        :type password: str
+        :returns: True if the password matches, False otherwise.
+        :rtype: bool
+        """
         return check_password_hash(self.password_hash, password)
 
 

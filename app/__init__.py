@@ -12,6 +12,14 @@ PORT_COOKIES = {5010: "hs_session_5010", 5011: "hs_session_5011", 5012: "hs_sess
 
 
 def create_app(port: int = 5010) -> Flask:
+    """
+    Create and configure the Flask application.
+
+    :param port: The port number for the application, used for session cookie naming.
+    :type port: int
+    :returns: The configured Flask application instance.
+    :rtype: Flask
+    """
     app = Flask(__name__)
 
     # Import CLI command from utility package at project root

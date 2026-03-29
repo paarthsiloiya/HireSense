@@ -16,4 +16,12 @@ def _role_dashboard_url():
 @views_bp.route("/")
 @login_required
 def dashboard():
+    """
+    Root dashboard route.
+
+    Redirects authenticated users to their role-specific dashboard.
+
+    :returns: Redirect to the appropriate dashboard based on user role.
+    :rtype: flask.Response
+    """
     return redirect(_role_dashboard_url())

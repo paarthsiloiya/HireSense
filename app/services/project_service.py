@@ -40,7 +40,22 @@ class ProjectService:
         start_date: date = None,
         end_date: date = None,
     ) -> Project:
-        """Create a new project."""
+        """
+        Create a new project.
+
+        :param manager_id: ID of the manager creating the project.
+        :type manager_id: int
+        :param title: Title of the project.
+        :type title: str
+        :param description: Description of the project.
+        :type description: str or None
+        :param start_date: Start date of the project.
+        :type start_date: date or None
+        :param end_date: End date of the project.
+        :type end_date: date or None
+        :returns: Created project.
+        :rtype: Project
+        """
         if not title or not title.strip():
             raise ValueError("Project title is required")
 

@@ -16,6 +16,16 @@ def _role_dashboard_url(user):
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
+    """
+    Handle user login.
+
+    Authenticates the user based on email and password. Redirects to the appropriate
+    dashboard based on user role. Handles various user states like blacklisted,
+    inactive, or unapproved accounts.
+
+    :returns: Rendered login template or redirect to dashboard.
+    :rtype: flask.Response
+    """
     if current_user.is_authenticated:
         return redirect(_role_dashboard_url(current_user))
 
@@ -49,6 +59,15 @@ def login():
 
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
+    """
+    Handle user registration.
+
+    Allows new users to register with username, email, and password. Validates
+    input and creates a new user account pending admin approval.
+
+    :returns: Rendered registration template or redirect to login.
+    :rtype: flask.Response
+    """
     if current_user.is_authenticated:
         return redirect(_role_dashboard_url(current_user))
 
@@ -79,5 +98,13 @@ def register():
 @auth_bp.route("/logout")
 @login_required
 def logout():
+    """
+    Handle user logout.
+
+    Logs out the current user and redirects to the login page.
+
+    :returns: Redirect to login page.
+    :rtype: flask.Response
+    """
     logout_user()
     return redirect(url_for("auth.login"))

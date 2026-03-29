@@ -138,7 +138,13 @@ class SkillService:
     def match_employees_to_project(project_id: int) -> List[Dict]:
         """
         Find employees matching project skill requirements.
+
         Returns ranked list of employees with match scores.
+
+        :param project_id: ID of the project.
+        :type project_id: int
+        :returns: List of matching employees.
+        :rtype: List[Dict]
         """
         project_skills = ProjectSkill.query.filter_by(project_id=project_id).all()
         if not project_skills:

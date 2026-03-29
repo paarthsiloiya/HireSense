@@ -241,12 +241,11 @@ class ResumeService:
           4. Write JSON-serialised result to Resume.parsed_content.
           5. Return the parsed dict for immediate use by the caller.
 
-        Returns:
-            dict with keys: extracted_skills, experience, education,
-            contact, summary, parsed_at, parser_version, status.
-
-        Raises:
-            ValueError: Resume record not found.
+        :param resume_id: ID of the resume to parse.
+        :type resume_id: int
+        :returns: Parsed content dict.
+        :rtype: Dict
+        :raises ValueError: Resume record not found.
         """
         resume = db.session.get(Resume, resume_id)
         if not resume:

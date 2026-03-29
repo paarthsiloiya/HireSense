@@ -43,16 +43,13 @@ class DocumentParser:
         """
         Auto-detect file type and return extracted plain text.
 
-        Args:
-            file_path: Absolute or relative path to the resume file.
-
-        Returns:
-            Extracted text as a single string (may be empty).
-
-        Raises:
-            FileNotFoundError: File does not exist on disk.
-            ValueError:        Unsupported file format.
-            NotImplementedError: Legacy .doc format requested.
+        :param file_path: Absolute or relative path to the resume file.
+        :type file_path: str
+        :returns: Extracted text as a single string (may be empty).
+        :rtype: str
+        :raises FileNotFoundError: File does not exist on disk.
+        :raises ValueError: Unsupported file format.
+        :raises NotImplementedError: Legacy .doc format requested.
         """
         path = Path(file_path)
         if not path.exists():
@@ -80,8 +77,10 @@ class DocumentParser:
         Tries pdfplumber first (better layout handling), then falls back to
         PyPDF2.  Returns an empty string if both fail – never raises.
 
-        Args:
-            file_path: Path to the PDF file.
+        :param file_path: Path to the PDF file.
+        :type file_path: str
+        :returns: Extracted text.
+        :rtype: str
         """
         text = DocumentParser._parse_pdf_pdfplumber(file_path)
         if text:
@@ -108,12 +107,10 @@ class DocumentParser:
         Iterates paragraphs and table cells (skills sections are frequently
         formatted as tables in professional CVs).
 
-        Args:
-            file_path: Path to the DOCX file.
-
-        Raises:
-            ImportError: python-docx is not installed.
-            ValueError:  File cannot be parsed.
+        :param file_path: Path to the DOCX file.
+        :type file_path: str
+        :raises ImportError: python-docx is not installed.
+        :raises ValueError: File cannot be parsed.
         """
         try:
             from docx import Document  # noqa: PLC0415
@@ -158,6 +155,11 @@ class DocumentParser:
         - Strips control characters (keeps tabs/spaces).
         - Collapses consecutive blank lines to a single blank line.
         - Strips leading/trailing whitespace per line.
+
+        :param raw: Raw extracted text.
+        :type raw: str
+        :returns: Cleaned text.
+        :rtype: str
         """
         import unicodedata  # stdlib – always available
 

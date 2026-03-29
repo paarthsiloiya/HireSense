@@ -62,7 +62,15 @@ class LearningPathService:
     def generate_learning_path(user_id: int, target_role: str) -> LearningPath:
         """
         Generate a learning path for career progression.
+
         Analyzes skill gaps and creates recommendations.
+
+        :param user_id: ID of the user.
+        :type user_id: int
+        :param target_role: Target role for progression.
+        :type target_role: str
+        :returns: Created learning path.
+        :rtype: LearningPath
         """
         if target_role not in LearningPathService.ROLE_TEMPLATES:
             raise ValueError(f"Unknown target role: {target_role}")
@@ -226,7 +234,15 @@ class LearningPathService:
     def compare_roles(user_id: int, target_role: str) -> Dict:
         """
         Compare user's current profile with requirements for a target role.
+
         Used for role-switch analysis.
+
+        :param user_id: ID of the user.
+        :type user_id: int
+        :param target_role: Target role to compare against.
+        :type target_role: str
+        :returns: Comparison results.
+        :rtype: Dict
         """
         if target_role not in LearningPathService.ROLE_TEMPLATES:
             raise ValueError(f"Unknown target role: {target_role}")
