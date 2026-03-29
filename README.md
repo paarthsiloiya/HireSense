@@ -82,7 +82,7 @@ Managers can:
 - Verify employee skills
 - Access self-service career development (learning paths, role comparison)
 
-See [docs/MANAGER_FEATURES.md](docs/MANAGER_FEATURES.md) for details.
+See the guides in [docs/guides/](docs/guides/) for detailed feature documentation.
 
 ### Employee Features
 
@@ -94,7 +94,7 @@ Employees can:
 - Generate personalized learning paths
 - Track career development progress
 
-See [docs/EMPLOYEE_FEATURES.md](docs/EMPLOYEE_FEATURES.md) for details.
+See the guides in [docs/guides/](docs/guides/) for detailed feature documentation.
 
 ---
 
@@ -254,6 +254,28 @@ $env:PORT=5010; python run.py
 ```
 
 Tables are created and the admin user is seeded automatically on first run. Register manager or employee accounts at `/auth/register`.
+
+---
+
+## Documentation
+
+Comprehensive documentation is available in the `docs/` folder:
+
+### User & Developer Guides
+
+- **[Setup Guide](docs/guides/SETUP.md)** - Installation and configuration
+- **[Deployment Guide](docs/guides/DEPLOYMENT.md)** - Deploying to production and GitHub Pages
+- **[Testing Guide](docs/guides/TESTING.md)** - Running tests and coverage requirements
+- **[Utility Scripts](docs/guides/UTILITY_SCRIPTS.md)** - CLI commands for development
+- **[Migrations Guide](docs/guides/MIGRATIONS.md)** - Database migrations with Flask-Migrate
+- **[Theming Guide](docs/guides/THEMING.md)** - Customizing the UI
+
+### API Documentation
+
+Auto-generated API documentation (built with Sphinx and Shibuya theme) will be available at:
+**https://paarthsiloiya.github.io/HireSense/**
+
+See [Deployment Guide](docs/guides/DEPLOYMENT.md) for information on building and deploying the API documentation.
 
 ---
 

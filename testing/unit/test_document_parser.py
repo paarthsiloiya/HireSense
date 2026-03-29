@@ -26,7 +26,7 @@ class TestDocumentParserFileSupport:
 
     def test_is_supported_doc(self):
         """Test that old DOC format is not supported (only .pdf and .docx)."""
-        # The implementation only supports .pdf and .docx, not .doc
+        
         assert DocumentParser.is_supported("resume.doc") is False
 
     def test_is_supported_txt(self):
@@ -97,7 +97,7 @@ class TestDocumentParserCleanText:
         """Test that multiple spaces within text are mostly preserved."""
         raw = "Multiple  spaces  here"
         cleaned = DocumentParser.clean_text(raw)
-        # Spaces within lines should be mostly preserved (implementation dependent)
+        
         assert "spac" in cleaned
 
     def test_clean_text_tabs_preserved(self):
@@ -136,7 +136,7 @@ class TestDocumentParserCleanText:
         """Test that control characters are removed."""
         raw = "Hello\x00World\x01Test"
         cleaned = DocumentParser.clean_text(raw)
-        # Control characters should be removed
+        
         assert "\x00" not in cleaned
         assert "\x01" not in cleaned
 
@@ -158,14 +158,14 @@ class TestDocumentParserPdfParsing:
             temp_path = f.name
         try:
             result = DocumentParser.parse_pdf(temp_path)
-            # Should return empty string or raise an error
+            
             assert isinstance(result, str)
         finally:
             os.unlink(temp_path)
 
     def test_parse_pdf_nonexistent_returns_empty(self):
         """Test that parsing nonexistent PDF is handled gracefully."""
-        # parse_pdf should handle missing file gracefully since pdfplumber will fail
+        
         result = DocumentParser.parse_pdf("/nonexistent/file.pdf")
         assert isinstance(result, str)
 
@@ -175,7 +175,7 @@ class TestDocumentParserDocxParsing:
 
     def test_parse_docx_nonexistent_file(self):
         """Test parsing nonexistent DOCX file."""
-        # This will raise an error during system call or library
+        
         with pytest.raises((FileNotFoundError, ValueError)):
             DocumentParser.parse_docx("/nonexistent/file.docx")
 
@@ -194,7 +194,7 @@ class TestDocumentParserDocxParsing:
         """Test DOCX parsing when python-docx is available."""
         try:
             from docx import Document
-            # Try to create a minimal DOCX
+            
             with tempfile.NamedTemporaryFile(suffix=".docx", delete=False) as f:
                 temp_path = f.name
             try:
@@ -232,15 +232,15 @@ class TestDocumentParserPdfPrivateMethods:
         """Test PDF parsing with pdfplumber when available."""
         try:
             import pdfplumber
-            # Create a minimal valid PDF
+            
             with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
-                # Write a minimal PDF header
+                
                 f.write(b"%PDF-1.0\n1 0 obj\n<< >>\nendobj\n")
                 temp_path = f.name
             
             try:
                 result = DocumentParser._parse_pdf_pdfplumber(temp_path)
-                # Should return string (possibly empty if no text)
+                
                 assert isinstance(result, str)
             finally:
                 os.unlink(temp_path)
@@ -252,7 +252,7 @@ class TestDocumentParserPdfPrivateMethods:
         try:
             import PyPDF2
             with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
-                # Write minimal valid PDF
+                
                 f.write(b"%PDF-1.0\n")
                 temp_path = f.name
             
@@ -271,11 +271,11 @@ class TestDocumentParserPdfPrivateMethods:
             temp_path = f.name
         
         try:
-            # Both methods should handle corrupted files gracefully
+            
             result1 = DocumentParser._parse_pdf_pdfplumber(temp_path)
             result2 = DocumentParser._parse_pdf_pypdf2(temp_path)
             
-            # Should return strings (possibly empty)
+            
             assert isinstance(result1, str)
             assert isinstance(result2, str)
         finally:
@@ -296,7 +296,7 @@ class TestDocumentParserDocxPrivateMethods:
                 doc = Document()
                 doc.add_paragraph("Introduction")
                 
-                # Add table with content
+                
                 table = doc.add_table(rows=2, cols=2)
                 table.cell(0, 0).text = "Header 1"
                 table.cell(0, 1).text = "Header 2"
@@ -307,7 +307,7 @@ class TestDocumentParserDocxPrivateMethods:
                 
                 result = DocumentParser.parse_docx(temp_path)
                 
-                # Should include table content
+                
                 assert "Header 1" in result or "Data 1" in result or len(result) > 0
             finally:
                 os.unlink(temp_path)
@@ -326,7 +326,7 @@ class TestDocumentParserDocxPrivateMethods:
                 doc.save(temp_path)
                 
                 result = DocumentParser.parse_docx(temp_path)
-                # Empty doc should return empty or whitespace string
+                
                 assert isinstance(result, str)
             finally:
                 os.unlink(temp_path)
@@ -345,7 +345,7 @@ class TestDocumentParserExtensionHandling:
         
         try:
             result = DocumentParser.parse_file(temp_path)
-            # Should handle uppercase extension
+            
             assert isinstance(result, str)
         finally:
             os.unlink(temp_path)
@@ -369,12 +369,12 @@ class TestDocumentParserPdfException:
     def test_parse_pdf_when_pdfplumber_fails(self):
         """Test PDF parsing when pdfplumber raises exception."""
         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
-            # Use malformed file content
-            f.write(b"PDF%\x00\xff\xfe")  # Invalid PDF with binary trash
+            
+            f.write(b"PDF%\x00\xff\xfe")  
             temp_path = f.name
         
         try:
-            # parse_pdf should catch exception and return empty string
+            
             result = DocumentParser.parse_pdf(temp_path)
             assert isinstance(result, str)
         finally:
@@ -383,13 +383,13 @@ class TestDocumentParserPdfException:
     def test_parse_pdf_pdfplumber_with_exception(self):
         """Test _parse_pdf_pdfplumber exception handling."""
         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
-            # Create a file that will cause pdfplumber to fail
+            
             f.write(b"\x00\x01\x02\x03\x04\x05\x06\x07")
             temp_path = f.name
         
         try:
             result = DocumentParser._parse_pdf_pdfplumber(temp_path)
-            # Should return empty string, not raise
+            
             assert isinstance(result, str)
         finally:
             os.unlink(temp_path)
@@ -397,13 +397,13 @@ class TestDocumentParserPdfException:
     def test_parse_pdf_pypdf2_with_exception(self):
         """Test _parse_pdf_pypdf2 exception handling."""
         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
-            # Create a file that will cause PyPDF2 to fail
+            
             f.write(b"\x00\x01\x02\x03\x04\x05\x06\x07")
             temp_path = f.name
         
         try:
             result = DocumentParser._parse_pdf_pypdf2(temp_path)
-            # Should return empty string, not raise
+            
             assert isinstance(result, str)
         finally:
             os.unlink(temp_path)
@@ -415,12 +415,12 @@ class TestDocumentParserDocxException:
     def test_parse_docx_with_invalid_file(self):
         """Test DOCX parsing with invalid/corrupted DOCX file."""
         with tempfile.NamedTemporaryFile(suffix=".docx", delete=False) as f:
-            # Write invalid data
+            
             f.write(b"This is not a valid DOCX file")
             temp_path = f.name
         
         try:
-            # Should raise ValueError for corrupted file
+            
             with pytest.raises(ValueError):
                 DocumentParser.parse_docx(temp_path)
         finally:
@@ -435,13 +435,13 @@ class TestDocumentParserDocxException:
             
             try:
                 doc = Document()
-                # Add empty paragraphs
+                
                 doc.add_paragraph("")
                 doc.add_paragraph("  ")
                 doc.save(temp_path)
                 
                 result = DocumentParser.parse_docx(temp_path)
-                # Should return empty string for empty document
+                
                 assert result == ""
             finally:
                 os.unlink(temp_path)
@@ -499,12 +499,12 @@ class TestDocumentParserDocxException:
         
         cleaned = DocumentParser.clean_text(raw_resume)
         
-        # Should preserve structure but clean excess whitespace
+        
         assert "John Doe" in cleaned
         assert "Company A" in cleaned
         assert "Education" in cleaned
         assert "BS Computer Science" in cleaned
-        # Should collapse multiple blank lines
+        
         assert "\n\n\n" not in cleaned
 
 
@@ -521,7 +521,7 @@ class TestDocumentParserEdgeCases:
     def test_parse_file_with_valid_pdf(self):
         """Test parsing a valid PDF file."""
         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
-            # Write minimal PDF
+            
             f.write(b"%PDF-1.0\n")
             temp_path = f.name
         
@@ -564,7 +564,7 @@ class TestDocumentParserEdgeCases:
         """Test that clean_text removes control characters."""
         raw = "Name\x00John\x01Doe\x02Resume"
         cleaned = DocumentParser.clean_text(raw)
-        # Control characters should be removed
+        
         assert "\x00" not in cleaned
         assert "\x01" not in cleaned
         assert "\x02" not in cleaned
@@ -573,7 +573,7 @@ class TestDocumentParserEdgeCases:
         """Test that clean_text preserves tabs."""
         raw = "Item1\tValue1\nItem2\tValue2"
         cleaned = DocumentParser.clean_text(raw)
-        # Tabs should be preserved
+        
         assert "\t" in cleaned
 
     def test_parse_docx_with_multiple_paragraphs(self):
@@ -591,7 +591,7 @@ class TestDocumentParserEdgeCases:
                 doc.save(temp_path)
                 
                 result = DocumentParser.parse_docx(temp_path)
-                # All paragraphs should be present
+                
                 assert "Paragraph 1" in result
                 assert "Paragraph 2" in result
                 assert "Paragraph 3" in result
@@ -609,7 +609,7 @@ class TestDocumentParserEdgeCases:
     def test_parse_empty_pdf_file(self):
         """Test parsing empty PDF file."""
         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
-            # Write minimal valid PDF structure
+            
             f.write(b"%PDF-1.0")
             temp_path = f.name
         try:
@@ -669,5 +669,5 @@ class TestDocumentParserEdgeCases:
         assert "OBJECTIVE" in cleaned
         assert "SKILLS" in cleaned
         assert "EXPERIENCE" in cleaned
-        # Sections should be separated but not by multiple blank lines
+        
         assert "\n\n\n" not in cleaned

@@ -34,9 +34,9 @@ class DocumentParser:
     can degrade gracefully without try/except at every call site.
     """
 
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
+    
+    
+    
 
     @classmethod
     def parse_file(cls, file_path: str) -> str:
@@ -113,7 +113,7 @@ class DocumentParser:
         :raises ValueError: File cannot be parsed.
         """
         try:
-            from docx import Document  # noqa: PLC0415
+            from docx import Document  
         except ImportError as exc:
             raise ImportError(
                 "python-docx is not installed. Run: pip install python-docx"
@@ -138,9 +138,9 @@ class DocumentParser:
             logger.exception("Failed to parse DOCX '%s'.", file_path)
             raise ValueError(f"Could not parse DOCX file: {exc}") from exc
 
-    # ------------------------------------------------------------------
-    # Utility
-    # ------------------------------------------------------------------
+    
+    
+    
 
     @staticmethod
     def is_supported(filename: str) -> bool:
@@ -161,7 +161,7 @@ class DocumentParser:
         :returns: Cleaned text.
         :rtype: str
         """
-        import unicodedata  # stdlib – always available
+        import unicodedata  
 
         lines: list[str] = []
         prev_blank = False
@@ -183,15 +183,15 @@ class DocumentParser:
 
         return "\n".join(lines).strip()
 
-    # ------------------------------------------------------------------
-    # Private helpers
-    # ------------------------------------------------------------------
+    
+    
+    
 
     @staticmethod
     def _parse_pdf_pdfplumber(file_path: str) -> str:
         """Primary PDF extractor using pdfplumber."""
         try:
-            import pdfplumber  # noqa: PLC0415
+            import pdfplumber  
         except ImportError:
             logger.warning("pdfplumber not installed; skipping primary PDF extractor.")
             return ""
@@ -212,7 +212,7 @@ class DocumentParser:
     def _parse_pdf_pypdf2(file_path: str) -> str:
         """Fallback PDF extractor using PyPDF2."""
         try:
-            import PyPDF2  # noqa: PLC0415
+            import PyPDF2  
         except ImportError:
             logger.warning("PyPDF2 not installed; fallback PDF extractor unavailable.")
             return ""

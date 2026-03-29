@@ -1,0 +1,12 @@
+# Sphinx build output
+_build/
+_static/
+_templates/
+
+# Sphinx cache
+.doctrees/
+*.inv
+
+# Generated files
+*.pyc
+__pycache__/

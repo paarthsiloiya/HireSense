@@ -32,18 +32,18 @@ def manager_required(f):
     return decorated
 
 
-# ============================================
-# DASHBOARD
-# ============================================
+
+
+
 
 @manager_bp.route("/")
 @manager_required
 def dashboard():
     """Manager dashboard with project overview and stats."""
     stats = ProjectService.get_project_stats(current_user.id)
-    projects = ProjectService.get_manager_projects(current_user.id)[:5]  # Recent 5
+    projects = ProjectService.get_manager_projects(current_user.id)[:5]  
 
-    # Get recent skill updates
+    
     recent_updates = SkillService.get_recent_skill_updates(limit=10)
 
     return render_template(
@@ -55,9 +55,9 @@ def dashboard():
     )
 
 
-# ============================================
-# PROJECT MANAGEMENT
-# ============================================
+
+
+
 
 @manager_bp.route("/projects")
 @manager_required
@@ -181,9 +181,9 @@ def delete_project(project_id):
     return redirect(url_for("manager.list_projects"))
 
 
-# ============================================
-# PROJECT SKILLS (REQ-9: View Project Dependencies)
-# ============================================
+
+
+
 
 @manager_bp.route("/projects/<int:project_id>/skills")
 @manager_required
@@ -196,7 +196,7 @@ def project_skills(project_id):
     skill_requirements = SkillService.get_project_skill_requirements(project_id)
     all_skills = SkillService.get_all_skills()
 
-    # Filter out already added skills
+    
     added_skill_ids = {s["skill_id"] for s in skill_requirements}
     available_skills = [s for s in all_skills if s.id not in added_skill_ids]
 
@@ -256,9 +256,9 @@ def remove_project_skill(project_id):
     return redirect(url_for("manager.project_skills", project_id=project_id))
 
 
-# ============================================
-# EMPLOYEE MATCHING (REQ-10: Review Skill Matches)
-# ============================================
+
+
+
 
 @manager_bp.route("/projects/<int:project_id>/match")
 @manager_required
@@ -271,11 +271,11 @@ def match_employees(project_id):
     matches = SkillService.match_employees_to_project(project_id)
     skill_requirements = SkillService.get_project_skill_requirements(project_id)
 
-    # Get current team to exclude from matches
+    
     current_team = ProjectService.get_project_team(project_id)
     current_team_ids = {m["user_id"] for m in current_team}
 
-    # Filter out already assigned employees
+    
     available_matches = [m for m in matches if m["user_id"] not in current_team_ids]
 
     return render_template(
@@ -310,7 +310,7 @@ def assign_employee(project_id):
         user = db.session.get(User, user_id)
         flash(f"Assigned {user.username} to the project.", "success")
 
-        # Create notification for the employee
+        
         notification = Notification(
             user_id=user_id,
             message=f"You have been assigned to project: {project.title}",
@@ -354,7 +354,7 @@ def unassign_employee(project_id, user_id):
         user = db.session.get(User, user_id)
         flash(f"Removed {user.username} from the project.", "success")
 
-        # Create notification for the employee
+        
         notification = Notification(
             user_id=user_id,
             message=f"You have been removed from project: {project.title}",
@@ -368,9 +368,9 @@ def unassign_employee(project_id, user_id):
     return redirect(url_for("manager.project_team", project_id=project_id))
 
 
-# ============================================
-# UPDATES VIEW (REQ-11: Check Resume/Skill Updates)
-# ============================================
+
+
+
 
 @manager_bp.route("/updates")
 @manager_required
@@ -426,9 +426,9 @@ def verify_employee_skill(user_id):
     return redirect(url_for("manager.view_employee_skills", user_id=user_id))
 
 
-# ============================================
-# MANAGER SELF-SERVICE (Career Growth)
-# ============================================
+
+
+
 
 @manager_bp.route("/profile")
 @manager_required
@@ -453,11 +453,11 @@ def my_skills():
     skills = SkillService.get_user_skills(current_user.id)
     all_skills = SkillService.get_all_skills()
 
-    # Filter out already added skills
+    
     added_skill_ids = {s["skill_id"] for s in skills}
     available_skills = [s for s in all_skills if s.id not in added_skill_ids]
 
-    # Calculate skill distribution by category
+    
     skill_distribution = _calculate_skill_distribution(skills)
 
     return render_template(
@@ -474,7 +474,7 @@ def _calculate_skill_distribution(skills):
     if not skills:
         return {"technical": 0, "soft": 0, "domain": 0}
 
-    # Group skills by category
+    
     categories = {"technical": [], "soft": [], "domain": []}
     for skill in skills:
         category = (skill.get("category") or "technical").lower()
@@ -483,7 +483,7 @@ def _calculate_skill_distribution(skills):
         else:
             categories["technical"].append(skill["proficiency_level"])
 
-    # Calculate average proficiency percentage (out of 5, convert to %)
+    
     distribution = {}
     for cat, levels in categories.items():
         if levels:

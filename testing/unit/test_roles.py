@@ -41,7 +41,7 @@ class TestManagerModule:
 
     def test_manager_decorator_functionality(self, client, manager_user):
         """Test that manager_required decorator works correctly."""
-        # Login as manager
+        
         client.post("/auth/login", data={
             "email": manager_user.email,
             "password": "Manager@123",
@@ -52,7 +52,7 @@ class TestManagerModule:
 
     def test_manager_decorator_blocks_other_roles(self, client, employee_user):
         """Test that manager_required decorator blocks non-manager users."""
-        # Login as employee
+        
         client.post("/auth/login", data={
             "email": employee_user.email,
             "password": "Employee@123",
@@ -94,7 +94,7 @@ class TestEmployeeModule:
 
     def test_employee_decorator_functionality(self, client, employee_user):
         """Test that employee_required decorator works correctly."""
-        # Login as employee
+        
         client.post("/auth/login", data={
             "email": employee_user.email,
             "password": "Employee@123",
@@ -105,7 +105,7 @@ class TestEmployeeModule:
 
     def test_employee_decorator_blocks_other_roles(self, client, manager_user):
         """Test that employee_required decorator blocks non-employee users."""
-        # Login as manager
+        
         client.post("/auth/login", data={
             "email": manager_user.email,
             "password": "Manager@123",
@@ -211,7 +211,7 @@ class TestRoleBasedAccessControl:
 
     def test_role_hierarchy_enforcement(self, client, db_session):
         """Test that role hierarchy is properly enforced."""
-        # Create users with different roles
+        
         users = [
             User(username="test_admin", email="test_admin@test.com", role="admin", is_approved=True, is_active=True),
             User(username="test_manager", email="test_manager@test.com", role="manager", is_approved=True, is_active=True),
@@ -223,7 +223,7 @@ class TestRoleBasedAccessControl:
             db_session.add(user)
         db_session.commit()
 
-        # Test each user's access
+        
         for user in users:
             client.post("/auth/login", data={
                 "email": user.email,

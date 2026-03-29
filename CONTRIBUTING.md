@@ -306,7 +306,7 @@ For comprehensive testing information, refer to **[TESTING.md](TESTING.md)**, wh
 - Troubleshooting common issues
 - Testing best practices
 
-**Any questions about testing?** See [TESTING.md](TESTING.md) as the source of truth for all QA procedures.
+**Any questions about testing?** See the [Testing Guide](docs/guides/TESTING.md) as the source of truth for all QA procedures.
 
 ---
 

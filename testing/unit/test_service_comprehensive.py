@@ -35,7 +35,7 @@ class TestResumeServiceComprehensive:
                         
                         result = ResumeService._parse_resume_content(temp_path)
                         
-                        # Should fall back to degraded mode
+                        
                         assert result["status"] == "degraded_no_spacy"
                         assert result["parser_version"] == "nlp_v2_degraded"
                         assert isinstance(result["extracted_skills"], list)
@@ -48,12 +48,12 @@ class TestResumeServiceComprehensive:
         with app.app_context():
             skill_names = ["Python", "JavaScript"]
             
-            # Add with proficiency 4
+            
             count = ResumeService.sync_parsed_skills_to_profile(
                 employee_user.id, skill_names, default_proficiency=4
             )
             
-            # Verify proficiency level is saved
+            
             user_skills = SkillService.get_user_skills(employee_user.id)
             python_skill = next((s for s in user_skills if s["skill_name"] == "Python"), None)
             
@@ -64,14 +64,14 @@ class TestResumeServiceComprehensive:
         """Test skill pattern matching with edge cases."""
         import re
         
-        # Test (.NET)
+        
         pattern = ResumeService._skill_pattern(".NET")
         assert re.search(pattern, ".NET", re.IGNORECASE) is not None
         
-        # Test short words
+        
         pattern_r = ResumeService._skill_pattern("R")
         result = re.search(pattern_r, "R programming", re.IGNORECASE)
-        # Result depends on implementation
+        
         
     def test_extract_education_with_complex_formatting(self):
         """Test education extraction with complex formatting."""
@@ -87,7 +87,7 @@ class TestResumeServiceComprehensive:
         
         education = ResumeService._extract_education(text)
         
-        # Should find bachelor's degree
+        
         assert len(education) > 0
         assert any("b.sc" in e["degree"].lower() or "computer" in e["degree"].lower() 
                   for e in education)
@@ -106,13 +106,13 @@ class TestResumeServiceComprehensive:
         June 2017 to August 2017
         """
         
-        # Create mock doc with sents
+        
         doc = MagicMock()
         doc.sents = []
         
         experience = ResumeService._extract_experience(doc, text)
         
-        # Should extract multiple experiences
+        
         assert len(experience) > 0
 
 
@@ -128,13 +128,13 @@ class TestProjectServiceComprehensive:
                 description="Refactor backend APIs"
             )
             
-            # Add skills to project
+            
             for skill in skills[:2]:
                 ProjectService.add_project_skill(
                     project.id, skill.id, is_mandatory=True
                 )
             
-            # Get project with skills
+            
             result = ProjectService.get_manager_projects(manager_user.id)
             assert len(result) > 0
 
@@ -143,7 +143,7 @@ class TestProjectServiceComprehensive:
         with app.app_context():
             from app.models import ProjectAssignment
             
-            # ProjectAssignment model doesn't have a 'role' field
+            
             assignment = ProjectAssignment(
                 project_id=project.id,
                 user_id=employee_user.id
@@ -151,9 +151,8 @@ class TestProjectServiceComprehensive:
             db.session.add(assignment)
             db.session.commit()
             
-            # Verify assignment was created
-            assigned = db.session.query(ProjectAssignment)\
-                .filter_by(project_id=project.id, user_id=employee_user.id).first()
+            
+            assigned = db.session.query(ProjectAssignment)                .filter_by(project_id=project.id, user_id=employee_user.id).first()
             assert assigned is not None
 
 
@@ -165,7 +164,7 @@ class TestSkillServiceComprehensive:
         with app.app_context():
             gaps = SkillService.calculate_skill_gap(employee_with_skills.id)
             
-            # Should return gaps (could be empty or have items)
+            
             assert isinstance(gaps, list)
 
     def test_match_multiple_employees(self, app, db_session, project_with_skills, employee_with_skills, employee_user):
@@ -173,9 +172,9 @@ class TestSkillServiceComprehensive:
         with app.app_context():
             matches = SkillService.match_employees_to_project(project_with_skills.id)
             
-            # Should return list of matches
+            
             assert isinstance(matches, list)
-            # At least one employee should match
+            
             assert len(matches) > 0
 
     def test_verify_multiple_skills(self, app, db_session, employee_with_skills, skills):
@@ -187,7 +186,7 @@ class TestSkillServiceComprehensive:
                     if result:
                         assert result.is_verified is True
                 except ValueError:
-                    # User might not have this skill
+                    
                     pass
 
 
@@ -197,7 +196,7 @@ class TestResumeServiceIntegration:
     def test_full_resume_upload_and_parse_workflow(self, app, db_session, employee_user, tmp_path):
         """Test complete workflow: upload, parse, sync skills."""
         with app.app_context():
-            # Create test PDF file
+            
             test_file = tmp_path / "resume.pdf"
             test_file.write_bytes(b"%PDF-1.0\nTesting Python Developer with JavaScript experience")
             
@@ -210,28 +209,28 @@ class TestResumeServiceIntegration:
                     content_type="application/pdf"
                 )
                 
-                # Upload resume
+                
                 resume = ResumeService.upload_resume(employee_user.id, file_storage)
                 assert resume is not None
                 assert resume.file_path is not None
                 
-                # Parse resume
+                
                 parse_result = ResumeService.parse_resume_skills(resume.id)
                 
-                # Should have some result
+                
                 assert parse_result is not None
                 assert "extracted_skills" in parse_result
                 
-                # Sync skills
+                
                 skill_count = ResumeService.sync_parsed_skills_to_profile(
                     employee_user.id,
                     parse_result["extracted_skills"]
                 )
                 
-                # Should add some skills
+                
                 assert skill_count >= 0
                 
-            # Cleanup
+            
             if os.path.exists(resume.file_path):
                 os.remove(resume.file_path)
 
@@ -246,13 +245,13 @@ class TestServiceErrorHandling:
             corrupted_file.filename = "resume.pdf"
             corrupted_file.file = MagicMock()
             
-            # Should handle or raise appropriate error
+            
             try:
                 result = ResumeService.upload_resume(employee_user.id, corrupted_file)
-                # If successful, we got a result
+                
                 assert result is not None or True
             except (ValueError, OSError):
-                # Expected if file handling fails
+                
                 pass
 
     def test_project_creation_with_invalid_manager(self, app, db_session):
@@ -264,9 +263,9 @@ class TestServiceErrorHandling:
                     title="Invalid Manager Project",
                     description="Test"
                 )
-                # Might succeed or fail depending on FK constraints
+                
             except Exception:
-                # Expected if FK constraint is enforced
+                
                 pass
 
     def test_skill_operations_with_removed_skill(self, app, db_session, employee_user):
@@ -277,11 +276,11 @@ class TestServiceErrorHandling:
             db.session.commit()
             skill_id = skill.id
             
-            # Add skill to user
+            
             user_skill = SkillService.add_user_skill(employee_user.id, skill_id, 3)
             assert user_skill is not None
             
-            # Remove skill from database
+            
             skill_to_remove = db.session.query(Skill).get(skill_id)
             if skill_to_remove:
                 db.session.delete(skill_to_remove)

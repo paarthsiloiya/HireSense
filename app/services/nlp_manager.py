@@ -47,13 +47,13 @@ class NLPManager:
         if self._initialized:
             return
 
-        # Lazy model references – populated on first use
+        
         self._spacy_model = None
         self._sentence_transformer = None
         self._bert_tokenizer = None
         self._bert_model = None
 
-        # Config (read from environment with sensible defaults)
+        
         self.nlp_enabled: bool = os.getenv("NLP_ENABLED", "true").lower() == "true"
         self.spacy_model_name: str = os.getenv("SPACY_MODEL", "en_core_web_lg")
         self.sentence_transformer_name: str = os.getenv(
@@ -65,9 +65,9 @@ class NLPManager:
         self._initialized = True
         logger.info("NLPManager initialised (models deferred until first use).")
 
-    # ------------------------------------------------------------------
-    # Model loaders
-    # ------------------------------------------------------------------
+    
+    
+    
 
     def load_spacy_model(self):
         """
@@ -83,7 +83,7 @@ class NLPManager:
         if self._spacy_model is not None:
             return self._spacy_model
 
-        import spacy  # noqa: PLC0415 – deferred to avoid mandatory dep at import
+        import spacy  
 
         fallback_chain = [
             self.spacy_model_name,
@@ -101,9 +101,9 @@ class NLPManager:
                     "spaCy model '%s' not found – trying next in chain.", model_name
                 )
 
-        # Final attempt: download the small model
+        
         logger.warning("Attempting to download 'en_core_web_sm' …")
-        os.system("python -m spacy download en_core_web_sm")  # noqa: S605
+        os.system("python -m spacy download en_core_web_sm")  
         try:
             self._spacy_model = spacy.load("en_core_web_sm")
             logger.info("Downloaded and loaded: en_core_web_sm")
@@ -129,7 +129,7 @@ class NLPManager:
             return self._sentence_transformer
 
         try:
-            from sentence_transformers import SentenceTransformer  # noqa: PLC0415
+            from sentence_transformers import SentenceTransformer  
         except ImportError as exc:
             raise ImportError(
                 "sentence-transformers is not installed. "
@@ -159,7 +159,7 @@ class NLPManager:
             return self._bert_tokenizer, self._bert_model
 
         try:
-            from transformers import AutoModel, AutoTokenizer  # noqa: PLC0415
+            from transformers import AutoModel, AutoTokenizer  
         except ImportError as exc:
             raise ImportError(
                 "transformers is not installed. "
@@ -171,9 +171,9 @@ class NLPManager:
         logger.info("Loaded BERT model: %s", self.bert_model_name)
         return self._bert_tokenizer, self._bert_model
 
-    # ------------------------------------------------------------------
-    # Skill synonym dictionary
-    # ------------------------------------------------------------------
+    
+    
+    
 
     def get_skill_synonyms(self) -> Dict[str, List[str]]:
         """
@@ -184,7 +184,7 @@ class NLPManager:
         skills catalogue grows.
         """
         return {
-            # Programming Languages
+            
             "python": ["python3", "py", "python programming", "python2"],
             "javascript": ["js", "ecmascript", "es6", "es2015", "es2020", "vanilla js"],
             "typescript": ["ts"],
@@ -199,7 +199,7 @@ class NLPManager:
             "swift": ["swift programming"],
             "scala": [],
             "r": ["r programming", "r language"],
-            # Web frameworks / libraries
+            
             "react": ["reactjs", "react.js", "react js"],
             "angular": ["angularjs", "angular.js", "angular 2+"],
             "vue": ["vuejs", "vue.js", "vue js"],
@@ -209,7 +209,7 @@ class NLPManager:
             "spring": ["spring boot", "spring framework"],
             "express": ["expressjs", "express.js"],
             "next.js": ["nextjs", "next js"],
-            # Databases
+            
             "sql": ["structured query language"],
             "postgresql": ["postgres", "psql"],
             "mysql": [],
@@ -218,7 +218,7 @@ class NLPManager:
             "elasticsearch": ["elastic search", "es"],
             "sqlite": [],
             "oracle": ["oracle db", "oracle database"],
-            # DevOps / Cloud
+            
             "docker": ["containerization", "containers", "dockerfile"],
             "kubernetes": ["k8s", "k8", "kube"],
             "aws": ["amazon web services", "amazon aws"],
@@ -237,7 +237,7 @@ class NLPManager:
                 "circleci",
             ],
             "linux": ["unix", "bash scripting", "shell scripting", "ubuntu"],
-            # Data / ML
+            
             "machine learning": ["ml", "predictive modelling", "predictive modeling"],
             "deep learning": ["dl", "neural networks", "neural network"],
             "nlp": ["natural language processing", "text analytics", "text mining"],
@@ -245,18 +245,18 @@ class NLPManager:
                 "tableau", "power bi", "matplotlib", "seaborn", "d3.js",
             ],
             "statistics": ["statistical analysis", "stats"],
-            # Methodologies / soft skills
+            
             "agile": ["scrum", "kanban", "sprint planning"],
             "system design": ["systems design", "architecture", "software architecture"],
             "code review": ["peer review", "pull requests", "pr review"],
             "mentoring": ["coaching", "mentorship"],
             "project management": ["pm", "pmp"],
             "communication": ["written communication", "verbal communication"],
-            # Security
+            
             "cybersecurity": ["information security", "infosec", "cyber security"],
             "network security": ["network defence", "network defense"],
             "penetration testing": ["pen testing", "pentesting", "ethical hacking"],
-            # Testing
+            
             "testing": ["qa", "quality assurance", "software testing"],
             "automation": ["test automation", "automated testing"],
             "selenium": ["selenium webdriver"],
@@ -304,7 +304,7 @@ class NLPManager:
         of each resume sentence via cosine similarity.
         """
         return {
-            # ── Infrastructure & DevOps ──────────────────────────────────
+            
             "Docker": [
                 "containerized deployment",
                 "container images and registries",
@@ -354,7 +354,7 @@ class NLPManager:
                 "configured and maintained Linux environments",
                 "deployed on bare-metal and virtual Linux machines",
             ],
-            # ── Programming Languages ────────────────────────────────────
+            
             "Python": [
                 "wrote backend services in a scripting language",
                 "automated data processing pipelines",
@@ -380,7 +380,7 @@ class NLPManager:
                 "wrote object-oriented backend systems",
                 "used a statically typed JVM language for large-scale systems",
             ],
-            # ── Web Frameworks ───────────────────────────────────────────
+            
             "React": [
                 "built component-based user interfaces",
                 "developed single-page applications with a frontend library",
@@ -402,7 +402,7 @@ class NLPManager:
                 "used dependency injection for a Java backend",
                 "developed REST APIs with a Java framework",
             ],
-            # ── Databases ────────────────────────────────────────────────
+            
             "PostgreSQL": [
                 "designed and queried relational databases",
                 "optimised complex SQL queries",
@@ -425,7 +425,7 @@ class NLPManager:
                 "performed joins aggregations and subqueries",
                 "optimised database query performance",
             ],
-            # ── Architecture & System Design ─────────────────────────────
+            
             "System Design": [
                 "designed microservices architecture",
                 "architected distributed systems for high availability",
@@ -454,7 +454,7 @@ class NLPManager:
                 "used language models for document understanding",
                 "extracted information from natural language text",
             ],
-            # ── Methodologies ────────────────────────────────────────────
+            
             "Agile": [
                 "worked in two-week sprint cycles",
                 "participated in daily standups and retrospectives",
@@ -474,7 +474,7 @@ class NLPManager:
                 "coached team members on technical skills",
                 "supported professional growth of junior staff",
             ],
-            # ── Security ─────────────────────────────────────────────────
+            
             "Cybersecurity": [
                 "implemented security controls and vulnerability mitigations",
                 "conducted threat modelling and risk assessments",
@@ -487,7 +487,7 @@ class NLPManager:
                 "conducted red-team exercises",
                 "identified and reported security weaknesses",
             ],
-            # ── Testing ──────────────────────────────────────────────────
+            
             "Testing": [
                 "wrote unit integration and end-to-end tests",
                 "ensured software quality through automated testing",
@@ -499,7 +499,7 @@ class NLPManager:
                 "wrote end-to-end test scripts for web interfaces",
                 "used a browser automation framework for regression testing",
             ],
-            # ── Git / Version Control ────────────────────────────────────
+            
             "Git": [
                 "managed source code with version control",
                 "used branching strategies like gitflow",
@@ -542,7 +542,7 @@ class NLPManager:
 
         try:
             model = self.load_sentence_transformer()
-        except (ImportError, Exception) as exc:  # noqa: BLE001
+        except (ImportError, Exception) as exc:  
             logger.warning(
                 "Sentence-Transformer unavailable; skipping semantic extraction: %s",
                 exc,
@@ -552,13 +552,13 @@ class NLPManager:
         concept_map = self.get_skill_concept_map()
         inferred: Dict[str, float] = {}
 
-        # Embed all resume sentences in a single batched call (fast)
+        
         try:
-            import numpy as np  # noqa: PLC0415
+            import numpy as np  
             sentence_embeddings = model.encode(
                 sentences, batch_size=64, show_progress_bar=False, normalize_embeddings=True
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  
             logger.warning("Sentence embedding failed: %s", exc)
             return {}
 
@@ -567,7 +567,7 @@ class NLPManager:
             if not concepts:
                 continue
 
-            # Embed all concept phrases for this skill in one batched call
+            
             try:
                 concept_embeddings = model.encode(
                     concepts,
@@ -575,14 +575,14 @@ class NLPManager:
                     show_progress_bar=False,
                     normalize_embeddings=True,
                 )
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:  
                 logger.warning(
                     "Concept embedding failed for skill '%s': %s", skill_name, exc
                 )
                 continue
 
-            # Cosine similarity matrix: shape (num_sentences, num_concepts)
-            # Since embeddings are L2-normalised, dot product == cosine similarity
+            
+            
             similarity_matrix = np.dot(sentence_embeddings, concept_embeddings.T)
 
             best_score = float(similarity_matrix.max())
@@ -616,7 +616,7 @@ class NLPManager:
         return None
 
 
-# ── Module-level singleton ──────────────────────────────────────────────────
-# Import this object everywhere NLP models are needed:
-#   from app.services.nlp_manager import nlp_manager
+
+
+
 nlp_manager = NLPManager()

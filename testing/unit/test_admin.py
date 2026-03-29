@@ -114,7 +114,7 @@ class TestUserManagement:
 
     def test_manage_users_pagination(self, authenticated_admin_client, db_session):
         """Test pagination on manage users page."""
-        # Create multiple users
+        
         for i in range(15):
             user = User(
                 username=f"paginationtest{i}",
@@ -126,27 +126,27 @@ class TestUserManagement:
             db_session.add(user)
         db_session.commit()
 
-        # Test first page with 10 per page
+        
         response = authenticated_admin_client.get("/admin/users?per_page=10")
         assert response.status_code == 200
 
-        # Test with different per_page value
+        
         response = authenticated_admin_client.get("/admin/users?per_page=20")
         assert response.status_code == 200
 
     def test_manage_users_role_filter(self, authenticated_admin_client, manager_user, employee_user):
         """Test role filtering on manage users page."""
-        # Filter by manager role
+        
         response = authenticated_admin_client.get("/admin/users?role_filter=manager")
         assert response.status_code == 200
 
-        # Filter by employee role
+        
         response = authenticated_admin_client.get("/admin/users?role_filter=employee")
         assert response.status_code == 200
 
     def test_manage_users_status_filter(self, authenticated_admin_client, db_session):
         """Test status filtering on manage users page."""
-        # Create approved and pending users
+        
         approved_user = User(
             username="approveduser",
             email="approved@test.com",
@@ -166,18 +166,18 @@ class TestUserManagement:
         db_session.add_all([approved_user, pending_user])
         db_session.commit()
 
-        # Test page loads with status filter options
+        
         response = authenticated_admin_client.get("/admin/users")
         assert response.status_code == 200
         assert b"status-filter" in response.data or b"Status" in response.data
         
-        # Test filtering by approved
+        
         response = authenticated_admin_client.get("/admin/users?status_filter=approved")
         assert response.status_code == 200
         assert b"approveduser" in response.data
         assert b"pendinguser" not in response.data
 
-        # Test filtering by pending
+        
         response = authenticated_admin_client.get("/admin/users?status_filter=pending")
         assert response.status_code == 200
         assert b"pendinguser" in response.data
@@ -185,7 +185,7 @@ class TestUserManagement:
 
     def test_manage_users_combined_filters(self, authenticated_admin_client, db_session):
         """Test combining role and status filters."""
-        # Create users with different combinations
+        
         approved_manager = User(
             username="appmanager",
             email="appmanager@test.com",
@@ -205,7 +205,7 @@ class TestUserManagement:
         db_session.add_all([approved_manager, pending_employee])
         db_session.commit()
 
-        # Test combined filters
+        
         response = authenticated_admin_client.get("/admin/users?role_filter=manager&status_filter=approved")
         assert response.status_code == 200
         assert b"appmanager" in response.data
@@ -220,14 +220,14 @@ class TestUserManagement:
         """Test that manage users page shows user statistics."""
         response = authenticated_admin_client.get("/admin/users")
         assert response.status_code == 200
-        # Check for statistical elements
+        
         assert b"New Users" in response.data or b"Awaiting" in response.data or b"Blacklisted" in response.data
 
     def test_manage_users_action_buttons(self, authenticated_admin_client, employee_user):
         """Test that action buttons are present for users."""
         response = authenticated_admin_client.get("/admin/users")
         assert response.status_code == 200
-        # Check for action elements
+        
         assert b"Edit" in response.data or b"edit" in response.data
 
     def test_edit_user_page_loads(self, authenticated_admin_client, employee_user):
@@ -334,7 +334,7 @@ class TestUserDeletion:
         )
         assert response.status_code == 200
 
-        # Admin user should still exist
+        
         admin_still_exists = User.query.get(admin_user.id)
         assert admin_still_exists is not None
 
@@ -483,7 +483,7 @@ class TestAdminNotifications:
         db_session.add(pending)
         db_session.commit()
 
-        # Approve user to trigger notification
+        
         authenticated_admin_client.post(
             f"/admin/approve/{pending.id}",
             follow_redirects=True
@@ -494,7 +494,7 @@ class TestAdminNotifications:
 
     def test_notification_context_processor(self, authenticated_admin_client, admin_user, db_session):
         """Test that notifications are injected into admin templates."""
-        # Create a notification
+        
         notif = Notification(
             user_id=admin_user.id,
             message="Test notification",
@@ -752,7 +752,7 @@ class TestNLPStats:
         """Test that NLP statistics are displayed."""
         response = authenticated_admin_client.get("/admin/nlp-stats")
         assert response.status_code == 200
-        # Check for stat categories
+        
         assert b"Total" in response.data or b"Success" in response.data
 
     def test_non_admin_cannot_access_nlp_stats(self, authenticated_employee_client):

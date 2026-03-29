@@ -46,9 +46,9 @@ logger = logging.getLogger(__name__)
 employee_bp = Blueprint("employee", __name__, url_prefix="/employee")
 
 
-# ---------------------------------------------------------------------------
-# Auth decorator
-# ---------------------------------------------------------------------------
+
+
+
 
 
 def employee_required(f):
@@ -62,9 +62,9 @@ def employee_required(f):
     return decorated
 
 
-# ---------------------------------------------------------------------------
-# Dashboard
-# ---------------------------------------------------------------------------
+
+
+
 
 
 @employee_bp.route("/")
@@ -76,7 +76,7 @@ def dashboard():
     active_path = LearningPathService.get_active_learning_path(current_user.id)
     resume      = ResumeService.get_user_resume(current_user.id)
 
-    # Calculate learning path progress
+    
     path_progress = None
     if active_path:
         path_progress = LearningPathService.get_path_progress(active_path)
@@ -91,9 +91,9 @@ def dashboard():
     )
 
 
-# ---------------------------------------------------------------------------
-# Project Assignments  (REQ-12)
-# ---------------------------------------------------------------------------
+
+
+
 
 
 @employee_bp.route("/assignments")
@@ -134,9 +134,9 @@ def view_assignment(assignment_id):
     )
 
 
-# ---------------------------------------------------------------------------
-# Profile
-# ---------------------------------------------------------------------------
+
+
+
 
 
 @employee_bp.route("/profile")
@@ -156,9 +156,9 @@ def profile():
     )
 
 
-# ---------------------------------------------------------------------------
-# Resume Management  (REQ-13)
-# ---------------------------------------------------------------------------
+
+
+
 
 
 @employee_bp.route("/resume")
@@ -219,7 +219,7 @@ def upload_resume():
             resume = ResumeService.upload_resume(current_user.id, file)
             flash("Resume uploaded successfully.", "success")
 
-            # ── NLP: parse the newly uploaded resume ───────────────────
+            
             try:
                 parsed = ResumeService.parse_resume_skills(resume.id)
                 extracted_skills = parsed.get("extracted_skills", [])
@@ -246,8 +246,8 @@ def upload_resume():
                         "please add them manually.",
                         "info",
                     )
-            except Exception as nlp_exc:  # noqa: BLE001
-                # NLP failure is non-fatal – upload succeeded
+            except Exception as nlp_exc:  
+                
                 logger.error(
                     "NLP parsing failed for resume id=%s: %s", resume.id, nlp_exc
                 )
@@ -295,9 +295,9 @@ def delete_resume():
     return redirect(url_for("employee.view_resume"))
 
 
-# ---------------------------------------------------------------------------
-# Skill Management  (REQ-13)
-# ---------------------------------------------------------------------------
+
+
+
 
 
 @employee_bp.route("/skills")
@@ -309,7 +309,7 @@ def my_skills():
     added_skill_ids = {s["skill_id"] for s in skills}
     available       = [s for s in all_skills if s.id not in added_skill_ids]
 
-    # Calculate skill distribution by category
+    
     skill_distribution = _calculate_skill_distribution(skills)
 
     return render_template(
@@ -325,7 +325,7 @@ def _calculate_skill_distribution(skills):
     if not skills:
         return {"technical": 0, "soft": 0, "domain": 0}
 
-    # Group skills by category
+    
     categories = {"technical": [], "soft": [], "domain": []}
     for skill in skills:
         category = (skill.get("category") or "technical").lower()
@@ -334,7 +334,7 @@ def _calculate_skill_distribution(skills):
         else:
             categories["technical"].append(skill["proficiency_level"])
 
-    # Calculate average proficiency percentage (out of 5, convert to %)
+    
     distribution = {}
     for cat, levels in categories.items():
         if levels:
@@ -400,9 +400,9 @@ def remove_skill():
     return redirect(url_for("employee.my_skills"))
 
 
-# ---------------------------------------------------------------------------
-# Role Comparison  (REQ-14)
-# ---------------------------------------------------------------------------
+
+
+
 
 
 @employee_bp.route("/compare")
@@ -427,9 +427,9 @@ def compare_roles():
     )
 
 
-# ---------------------------------------------------------------------------
-# Learning Paths  (REQ-14)
-# ---------------------------------------------------------------------------
+
+
+
 
 
 @employee_bp.route("/learning-paths")

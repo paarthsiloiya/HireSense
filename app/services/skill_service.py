@@ -92,7 +92,7 @@ class SkillService:
             raise ValueError("User does not have this skill")
 
         user_skill.proficiency_level = proficiency_level
-        user_skill.is_verified = False  # Reset verification on update
+        user_skill.is_verified = False  
         db.session.commit()
         return user_skill
 
@@ -150,7 +150,7 @@ class SkillService:
         if not project_skills:
             return []
 
-        # Get all approved, active employees
+        
         employees = User.query.filter_by(
             role="employee", is_approved=True, is_active=True
         ).all()
@@ -176,7 +176,7 @@ class SkillService:
                 }
             )
 
-        # Sort by mandatory skills met first, then by score
+        
         matches.sort(key=lambda x: (x["mandatory_met"], x["match_score"]), reverse=True)
         return matches
 
@@ -221,7 +221,7 @@ class SkillService:
                     optional_matched += 1
                     total_proficiency_score += user_level
 
-        # Calculate weighted score
+        
         all_mandatory_met = mandatory_met == mandatory_required if mandatory_required > 0 else True
         base_score = (mandatory_met * 10) + (optional_matched * 5) + total_proficiency_score
 
@@ -244,14 +244,14 @@ class SkillService:
             for us in UserSkill.query.filter_by(user_id=user_id).all()
         }
 
-        # Get all skills and identify gaps
+        
         all_skills = Skill.query.all()
         gaps = []
 
         for skill in all_skills:
             user_level = user_skills.get(skill.id, 0)
-            # Consider a gap if user doesn't have skill or has low proficiency
-            recommended_level = 3  # Intermediate level as baseline
+            
+            recommended_level = 3  
             if user_level < recommended_level:
                 gaps.append(
                     {

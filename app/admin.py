@@ -44,9 +44,9 @@ logger = logging.getLogger(__name__)
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
 
-# ---------------------------------------------------------------------------
-# Auth decorator
-# ---------------------------------------------------------------------------
+
+
+
 
 
 def admin_required(f):
@@ -60,9 +60,9 @@ def admin_required(f):
     return decorated
 
 
-# ---------------------------------------------------------------------------
-# Notification helpers
-# ---------------------------------------------------------------------------
+
+
+
 
 
 def notify_admin(message: str, type: str = "info") -> None:
@@ -72,7 +72,7 @@ def notify_admin(message: str, type: str = "info") -> None:
             Notification(user_id=current_user.id, message=message, type=type)
         )
         db.session.commit()
-    except Exception:  # noqa: BLE001
+    except Exception:  
         db.session.rollback()
 
 
@@ -97,9 +97,9 @@ def inject_notifications():
     return {}
 
 
-# ---------------------------------------------------------------------------
-# Dashboard
-# ---------------------------------------------------------------------------
+
+
+
 
 
 @admin_bp.route("/")
@@ -118,18 +118,18 @@ def dashboard():
     pending_users = query.all()
     total_users   = User.query.filter_by(is_approved=True, is_blacklisted=False).count()
 
-    # Calculate dynamic stats
+    
     active_projects = Project.query.filter_by(status="active").count()
 
-    # Calculate skill gaps: count users missing skills or with low proficiency
-    # A skill gap = (total skills * employees) - actual user skills with proficiency >= 3
+    
+    
     total_skills = Skill.query.count()
     total_employees = User.query.filter_by(role="employee", is_approved=True).count()
     proficient_user_skills = UserSkill.query.filter(UserSkill.proficiency_level >= 3).count()
     potential_skills = total_skills * total_employees if total_employees > 0 else 0
     skill_gaps = max(0, potential_skills - proficient_user_skills)
 
-    # Get recent active users for the User Lifecycle widget
+    
     recent_users = (
         User.query
         .filter_by(is_approved=True, is_blacklisted=False)
@@ -139,17 +139,17 @@ def dashboard():
         .all()
     )
 
-    # Calculate engagement metrics for each user
+    
     user_lifecycle = []
     for user in recent_users:
-        # Calculate months active
+        
         months_active = max(1, (datetime.utcnow() - user.created_at).days // 30)
 
-        # Calculate engagement score based on skills and activity
+        
         user_skill_count = UserSkill.query.filter_by(user_id=user.id).count()
         verified_skills = UserSkill.query.filter_by(user_id=user.id, is_verified=True).count()
 
-        # Simple engagement score: based on skill count and verification
+        
         engagement_score = min(100, (user_skill_count * 10) + (verified_skills * 20))
 
         user_lifecycle.append({
@@ -158,7 +158,7 @@ def dashboard():
             "engagement_score": engagement_score,
         })
 
-    # Get NLP/Resume parsing stats for AI Model Status widget
+    
     all_resumes = Resume.query.all()
     total_resumes = len(all_resumes)
     parsed_resumes = sum(1 for r in all_resumes if r.parsed_content)
@@ -179,9 +179,9 @@ def dashboard():
     )
 
 
-# ---------------------------------------------------------------------------
-# NLP Statistics  (new – admin visibility into NLP pipeline health)
-# ---------------------------------------------------------------------------
+
+
+
 
 
 @admin_bp.route("/nlp-stats")
@@ -286,7 +286,7 @@ def reparse_all_resumes():
                 resume.user_id, extracted, default_proficiency=2
             )
             success_count += 1
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  
             logger.error(
                 "Bulk reparse failed for resume id=%d: %s", resume.id, exc
             )
@@ -318,16 +318,16 @@ def reparse_single_resume(resume_id):
             f"{len(extracted)} skill(s) found, {added} new skill(s) added.",
             "success",
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:  
         logger.error("Single reparse failed for resume id=%d: %s", resume_id, exc)
         notify_admin("NLP re-parse failed. Check server logs.", "danger")
 
     return redirect(url_for("admin.nlp_stats"))
 
 
-# ---------------------------------------------------------------------------
-# User export
-# ---------------------------------------------------------------------------
+
+
+
 
 
 @admin_bp.route("/users/export")
@@ -375,9 +375,9 @@ def export_users():
     )
 
 
-# ---------------------------------------------------------------------------
-# User approval / rejection
-# ---------------------------------------------------------------------------
+
+
+
 
 
 @admin_bp.route("/approve/<int:user_id>", methods=["POST"])
@@ -406,9 +406,9 @@ def reject_user(user_id):
     return redirect(url_for("admin.manage_users"))
 
 
-# ---------------------------------------------------------------------------
-# User management (list, edit, delete, blacklist)
-# ---------------------------------------------------------------------------
+
+
+
 
 
 @admin_bp.route("/users")
@@ -559,9 +559,9 @@ def whitelist_user(user_id):
     return redirect(url_for("admin.view_blacklisted_users"))
 
 
-# ---------------------------------------------------------------------------
-# Credential reset
-# ---------------------------------------------------------------------------
+
+
+
 
 
 @admin_bp.route("/reset-credentials")
@@ -616,10 +616,10 @@ def force_logout(user_id):
     return redirect(url_for("admin.reset_credentials", q=user.username))
 
 
-# ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
-# Global Skill Catalog Management
-# ---------------------------------------------------------------------------
+
+
+
+
 
 @admin_bp.route("/skills")
 @admin_required
@@ -640,7 +640,7 @@ def list_skills():
     query = query.order_by(Skill.name.asc())
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
 
-    # Get counts for stats
+    
     total_skills = Skill.query.count()
     technical_count = Skill.query.filter_by(category="technical").count()
     soft_count = Skill.query.filter_by(category="soft").count()
@@ -676,7 +676,7 @@ def add_skill():
                 active_page="Skills",
             )
 
-        # Check for duplicate
+        
         existing = Skill.query.filter(Skill.name.ilike(name)).first()
         if existing:
             flash(f"Skill '{name}' already exists.", "danger")
@@ -719,7 +719,7 @@ def edit_skill(skill_id):
                 active_page="Skills",
             )
 
-        # Check for duplicate (excluding current skill)
+        
         existing = Skill.query.filter(
             Skill.name.ilike(name),
             Skill.id != skill_id
@@ -760,9 +760,9 @@ def delete_skill(skill_id):
     return redirect(url_for("admin.list_skills"))
 
 
-# ---------------------------------------------------------------------------
-# System-Wide Project Oversight
-# ---------------------------------------------------------------------------
+
+
+
 
 @admin_bp.route("/projects")
 @admin_required
@@ -783,7 +783,7 @@ def list_projects():
     query = query.order_by(Project.created_at.desc())
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
 
-    # Get counts for stats
+    
     total_projects = Project.query.count()
     planning_count = Project.query.filter_by(status="planning").count()
     active_count = Project.query.filter_by(status="active").count()
@@ -813,7 +813,7 @@ def view_project(project_id):
     if project is None:
         abort(404)
 
-    # Get project skills and assignments
+    
     required_skills = project.required_skills.all()
     assignments = project.assignments.all()
 

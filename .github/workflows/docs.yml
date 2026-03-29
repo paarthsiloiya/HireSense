@@ -8,7 +8,8 @@ on:
       - develop
     paths:
       - 'app/**'
-      - 'docs/**'
+      - 'testing/**'
+      - 'docs/sphinx/**'
       - 'requirements.txt'
       - '.github/workflows/docs.yml'
   pull_request:
@@ -18,7 +19,8 @@ on:
       - develop
     paths:
       - 'app/**'
-      - 'docs/**'
+      - 'testing/**'
+      - 'docs/sphinx/**'
       - 'requirements.txt'
   workflow_dispatch:  # Allow manual trigger
 
@@ -54,7 +56,6 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          pip install sphinx sphinx-rtd-theme sphinx-autodoc-typehints
           pip install -r requirements.txt || pip install flask flask-sqlalchemy flask-login flask-migrate
 
       - name: Download spaCy model (for documentation build)
@@ -63,15 +64,15 @@ jobs:
 
       - name: Build Sphinx documentation
         run: |
-          cd docs
+          cd docs/sphinx
           sphinx-build -b html -W --keep-going . _build/html
         continue-on-error: true
 
       - name: Check if documentation was built
         run: |
-          if [ -d "docs/_build/html" ]; then
+          if [ -d "docs/sphinx/_build/html" ]; then
             echo "Documentation built successfully"
-            ls -la docs/_build/html/
+            ls -la docs/sphinx/_build/html/
           else
             echo "Documentation build failed"
             exit 1
@@ -98,7 +99,6 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install sphinx sphinx-rtd-theme sphinx-autodoc-typehints
           pip install -r requirements.txt || pip install flask flask-sqlalchemy flask-login flask-migrate
 
       - name: Download spaCy model
@@ -107,13 +107,13 @@ jobs:
 
       - name: Build documentation
         run: |
-          cd docs
+          cd docs/sphinx
           sphinx-build -b html . _build/html
 
       - name: Upload artifacts to GitHub Pages
         uses: actions/upload-pages-artifact@v2
         with:
-          path: docs/_build/html
+          path: docs/sphinx/_build/html
 
       - name: Deploy to GitHub Pages
         id: deployment

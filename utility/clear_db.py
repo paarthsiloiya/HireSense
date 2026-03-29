@@ -25,7 +25,7 @@ def clear_db(confirm: bool):
         ProjectAssignment, UserSkill, Resume, LearningPath, Notification
     )
 
-    # Safety check
+    
     if not confirm:
         click.echo(click.style("WARNING: This will delete ALL data from the database!", fg="red", bold=True))
         click.echo("   Preserved: admin@hiresense.local")
@@ -33,7 +33,7 @@ def clear_db(confirm: bool):
         click.echo(click.style("flask clear-db --confirm", fg="yellow", bold=True))
         return
 
-    # Deletion order (respects foreign keys)
+    
     deletion_order = [
         ("Notifications", Notification),
         ("Project Assignments", ProjectAssignment),
@@ -53,7 +53,7 @@ def clear_db(confirm: bool):
     try:
         for name, model in deletion_order:
             if model == User:
-                # Special handling: preserve admin
+                
                 count = model.query.filter(
                     model.email != "admin@hiresense.local"
                 ).delete(synchronize_session='fetch')
@@ -68,12 +68,12 @@ def clear_db(confirm: bool):
         click.echo()
         click.echo(click.style("Database cleared successfully!", fg="green", bold=True))
 
-        # Show preserved items
+        
         admin = User.query.filter_by(email="admin@hiresense.local").first()
         click.echo("\n" + click.style("Preserved:", fg="cyan"))
         click.echo(f"  - Admin user: {admin.email if admin else 'NOT FOUND'}")
 
-        # Current state
+        
         click.echo("\n" + click.style("Current Database State:", fg="cyan"))
         click.echo(f"  - Users: {User.query.count()}")
         click.echo(f"  - Projects: {Project.query.count()}")

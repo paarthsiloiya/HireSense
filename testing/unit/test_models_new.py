@@ -167,7 +167,7 @@ class TestUserSkillModel:
 
         duplicate = UserSkill(
             user_id=employee_with_skills.id,
-            skill_id=skills[0].id,  # Python - already added
+            skill_id=skills[0].id,  
             proficiency_level=1,
         )
         db_session.add(duplicate)

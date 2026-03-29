@@ -55,7 +55,7 @@ class TestSkillService:
         """Test removing a user skill."""
         result = SkillService.remove_user_skill(employee_with_skills.id, skills[0].id)
         assert result is True
-        # Verify it's gone
+        
         user_skills = SkillService.get_user_skills(employee_with_skills.id)
         assert not any(s["skill_name"] == "Python" for s in user_skills)
 
@@ -70,7 +70,7 @@ class TestSkillService:
         """Test matching employees to project."""
         matches = SkillService.match_employees_to_project(project_with_skills.id)
         assert len(matches) > 0
-        # Employee with Python skill should be in matches
+        
         employee_match = next((m for m in matches if m["user_id"] == employee_with_skills.id), None)
         assert employee_match is not None
         assert employee_match["mandatory_met"] is True
@@ -78,7 +78,7 @@ class TestSkillService:
     def test_calculate_skill_gap(self, db_session, employee_with_skills):
         """Test calculating skill gaps."""
         gaps = SkillService.calculate_skill_gap(employee_with_skills.id)
-        # Should identify gaps for skills not at level 3+
+        
         assert len(gaps) > 0
 
 
@@ -146,7 +146,7 @@ class TestProjectService:
             assignment.project_id, assignment.user_id
         )
         assert result is True
-        # Verify status changed
+        
         db_session.refresh(assignment)
         assert assignment.status == "removed"
 
@@ -226,12 +226,12 @@ class TestResumeService:
         """Test retrieving user's resume."""
         with app.app_context():
             resume = ResumeService.get_user_resume(employee_user.id)
-            assert resume is None  # No resume yet
+            assert resume is None  
 
     def test_upload_resume_pdf(self, app, db_session, employee_user, tmp_path):
         """Test uploading a PDF resume."""
         with app.app_context():
-            # Create a test PDF file
+            
             test_file = tmp_path / "test_resume.pdf"
             test_file.write_bytes(b"%PDF-1.4\nTest resume content")
 
@@ -248,7 +248,7 @@ class TestResumeService:
             assert resume.user_id == employee_user.id
             assert os.path.exists(resume.file_path)
 
-            # Cleanup
+            
             if os.path.exists(resume.file_path):
                 os.remove(resume.file_path)
 
@@ -256,7 +256,7 @@ class TestResumeService:
         """Test uploading a DOCX resume."""
         with app.app_context():
             test_file = tmp_path / "test_resume.docx"
-            test_file.write_bytes(b"PK\x03\x04")  # DOCX magic bytes
+            test_file.write_bytes(b"PK\x03\x04")  
 
             with open(test_file, 'rb') as f:
                 file_storage = FileStorage(
@@ -269,7 +269,7 @@ class TestResumeService:
             assert resume is not None
             assert resume.original_filename == "test_resume.docx"
 
-            # Cleanup
+            
             if os.path.exists(resume.file_path):
                 os.remove(resume.file_path)
 
@@ -300,7 +300,7 @@ class TestResumeService:
     def test_upload_resume_replaces_existing(self, app, db_session, employee_user, tmp_path):
         """Test that uploading a new resume replaces the old one."""
         with app.app_context():
-            # Upload first resume
+            
             test_file1 = tmp_path / "resume1.pdf"
             test_file1.write_bytes(b"%PDF-1.4\nFirst resume")
 
@@ -313,7 +313,7 @@ class TestResumeService:
                 resume1 = ResumeService.upload_resume(employee_user.id, file_storage1)
                 old_path = resume1.file_path
 
-            # Upload second resume
+            
             test_file2 = tmp_path / "resume2.pdf"
             test_file2.write_bytes(b"%PDF-1.4\nSecond resume")
 
@@ -325,18 +325,18 @@ class TestResumeService:
                 )
                 resume2 = ResumeService.upload_resume(employee_user.id, file_storage2)
 
-            # Check only one resume exists
+            
             assert resume2.original_filename == "resume2.pdf"
-            assert not os.path.exists(old_path)  # Old file deleted
+            assert not os.path.exists(old_path)  
 
-            # Cleanup
+            
             if os.path.exists(resume2.file_path):
                 os.remove(resume2.file_path)
 
     def test_delete_resume(self, app, db_session, employee_user, tmp_path):
         """Test deleting a resume."""
         with app.app_context():
-            # Upload resume first
+            
             test_file = tmp_path / "test.pdf"
             test_file.write_bytes(b"%PDF-1.4\nTest")
 
@@ -349,11 +349,11 @@ class TestResumeService:
                 resume = ResumeService.upload_resume(employee_user.id, file_storage)
                 file_path = resume.file_path
 
-            # Delete resume
+            
             result = ResumeService.delete_resume(employee_user.id)
             assert result is True
 
-            # Verify file and DB record deleted
+            
             assert not os.path.exists(file_path)
             assert ResumeService.get_user_resume(employee_user.id) is None
 
@@ -468,12 +468,12 @@ class TestLearningPathServiceMarkSkillComplete:
     def test_mark_skill_complete_success(self, app, db_session, employee_user, skills):
         """Test successfully marking a skill as complete."""
         with app.app_context():
-            # Create a learning path with the skill
+            
             path = LearningPathService.generate_learning_path(
                 employee_user.id, "senior_developer"
             )
 
-            # Get a skill from recommendations
+            
             content = json.loads(path.generated_content)
             if content["recommendations"]:
                 skill_name = content["recommendations"][0]["skill_name"]
@@ -520,25 +520,25 @@ class TestLearningPathServiceMarkSkillComplete:
     def test_mark_skill_complete_updates_user_skill(self, app, db_session, employee_user, skills):
         """Test that completing skill adds it to user profile."""
         with app.app_context():
-            # Generate path - Docker should be a required skill
+            
             path = LearningPathService.generate_learning_path(
                 employee_user.id, "devops_engineer"
             )
 
-            # Docker is a required skill for devops
+            
             result = LearningPathService.mark_skill_complete(
                 path.id, "Docker", employee_user.id
             )
 
-            # Check user now has the skill
+            
             user_skills = SkillService.get_user_skills(employee_user.id)
-            # The skill may have been added if it exists in DB
+            
             assert result["skill_name"] == "Docker"
 
     def test_mark_skill_complete_all_skills(self, app, db_session, employee_user):
         """Test completing all skills auto-completes the path."""
         with app.app_context():
-            # Generate path
+            
             path = LearningPathService.generate_learning_path(
                 employee_user.id, "senior_developer"
             )
@@ -546,13 +546,13 @@ class TestLearningPathServiceMarkSkillComplete:
             content = json.loads(path.generated_content)
             recommendations = content.get("recommendations", [])
 
-            # Mark all skills complete
+            
             for rec in recommendations:
                 LearningPathService.mark_skill_complete(
                     path.id, rec["skill_name"], employee_user.id
                 )
 
-            # Refresh path
+            
             from app.models import LearningPath
             path = db.session.get(LearningPath, path.id)
             assert path.status == "completed"
@@ -593,23 +593,23 @@ class TestLearningPathServiceAdvanced:
             )
             content = json.loads(path.generated_content)
 
-            # User has Python at level 4, so they should meet that requirement
+            
             assert content["readiness_score"] >= 0
 
     def test_generate_path_archives_existing(self, app, db_session, employee_user):
         """Test generating new path archives old active paths."""
         with app.app_context():
-            # Generate first path
+            
             path1 = LearningPathService.generate_learning_path(
                 employee_user.id, "senior_developer"
             )
 
-            # Generate second path for same role
+            
             path2 = LearningPathService.generate_learning_path(
                 employee_user.id, "senior_developer"
             )
 
-            # Refresh path1
+            
             from app.models import LearningPath
             path1_refreshed = db.session.get(LearningPath, path1.id)
 
@@ -645,7 +645,7 @@ class TestLearningPathServiceAdvanced:
             employee_with_skills.id, "senior_developer"
         )
 
-        # Employee has Python at level 4
+        
         assert comparison["required_skills"]["met"] > 0
         assert comparison["readiness_score"] >= 0
         assert "estimated_time_to_ready" in comparison
@@ -673,7 +673,7 @@ class TestResumeServiceAdvanced:
     def test_parse_resume_skills(self, app, db_session, employee_user, tmp_path):
         """Test parsing skills from resume."""
         with app.app_context():
-            # First upload a resume
+            
             test_file = tmp_path / "test.pdf"
             test_file.write_bytes(b"%PDF-1.4\nTest resume")
 
@@ -686,14 +686,14 @@ class TestResumeServiceAdvanced:
                 )
                 resume = ResumeService.upload_resume(employee_user.id, file_storage)
 
-            # Parse resume
+            
             result = ResumeService.parse_resume_skills(resume.id)
 
             assert "extracted_skills" in result
             assert "parsed_at" in result
             assert result["parser_version"] == "nlp_v2"
 
-            # Cleanup
+            
             if os.path.exists(resume.file_path):
                 os.remove(resume.file_path)
 
@@ -706,30 +706,30 @@ class TestResumeServiceAdvanced:
     def test_sync_parsed_skills_to_profile(self, app, db_session, employee_user, skills):
         """Test syncing parsed skills to user profile."""
         with app.app_context():
-            # Sync existing skills
+            
             skill_names = ["Python", "JavaScript", "NonexistentSkill"]
             count = ResumeService.sync_parsed_skills_to_profile(
                 employee_user.id, skill_names, default_proficiency=3
             )
 
-            # Python and JavaScript should be added (if not already there)
-            assert count >= 0  # May be 0-2 depending on existing skills
+            
+            assert count >= 0  
 
     def test_sync_parsed_skills_skip_duplicates(self, app, db_session, employee_with_skills, skills):
         """Test syncing skills skips existing ones."""
         with app.app_context():
-            # Employee already has Python
+            
             skill_names = ["Python"]
             count = ResumeService.sync_parsed_skills_to_profile(
                 employee_with_skills.id, skill_names
             )
 
-            assert count == 0  # Already has Python
+            assert count == 0  
 
     def test_get_recent_resume_updates(self, app, db_session, employee_user, tmp_path):
         """Test getting recent resume updates."""
         with app.app_context():
-            # Upload a resume first
+            
             test_file = tmp_path / "test.pdf"
             test_file.write_bytes(b"%PDF-1.4\nTest")
 
@@ -742,13 +742,13 @@ class TestResumeServiceAdvanced:
                 )
                 resume = ResumeService.upload_resume(employee_user.id, file_storage)
 
-            # Get recent updates
+            
             updates = ResumeService.get_recent_resume_updates(limit=10)
 
             assert len(updates) > 0
             assert any(u["user_id"] == employee_user.id for u in updates)
 
-            # Cleanup
+            
             if os.path.exists(resume.file_path):
                 os.remove(resume.file_path)
 
@@ -804,11 +804,11 @@ class TestResumeServiceExtraction:
         """Test pattern for short words prevents false matches."""
         pattern = ResumeService._skill_pattern("Go")
         import re
-        # Should match 'Go' as skill
+        
         assert re.search(pattern, "Go", re.IGNORECASE) is not None
-        # But should not match 'Go' inside 'algorithm'
+        
         result = re.search(pattern, "algorithm", re.IGNORECASE)
-        # This depends on implementation - may or may not match
+        
 
     def test_extract_contact_info_email_and_phone(self, app):
         """Test extracting both email and phone."""
@@ -830,7 +830,7 @@ class TestResumeServiceExtraction:
     def test_extract_contact_info_email_only(self):
         """Test extracting email without phone."""
         text = "Email: jane@test.org"
-        # Create mock doc with empty entity list
+        
         doc = MagicMock()
         doc.ents = []
         
@@ -842,7 +842,7 @@ class TestResumeServiceExtraction:
     def test_extract_contact_info_phone_only(self):
         """Test extracting phone without email."""
         text = "Call me at (555) 987-6543"
-        # Create mock doc with empty entity list
+        
         doc = MagicMock()
         doc.ents = []
         
@@ -854,7 +854,7 @@ class TestResumeServiceExtraction:
     def test_extract_contact_info_no_contact(self):
         """Test when no contact info is found."""
         text = "This resume has no contact information"
-        # Create mock doc with empty entity list
+        
         doc = MagicMock()
         doc.ents = []
         
@@ -866,7 +866,7 @@ class TestResumeServiceExtraction:
     def test_extract_contact_info_multiple_emails(self):
         """Test that only first email is extracted."""
         text = "Email: first@example.com or second@example.com"
-        # Create mock doc with empty entity list
+        
         doc = MagicMock()
         doc.ents = []
         
@@ -909,7 +909,7 @@ class TestResumeServiceExtraction:
         - Led team of 5 engineers
         """
         try:
-            # Need spaCy for full functionality
+            
             from app.services.nlp_manager import nlp_manager
             nlp = nlp_manager.load_spacy_model()
             doc = nlp(text)
@@ -922,7 +922,7 @@ class TestResumeServiceExtraction:
 
     def test_extract_experience_empty_text(self):
         """Test experience extraction from empty text."""
-        # Create mock doc with empty entity list
+        
         doc = MagicMock()
         doc.sents = []
         
@@ -935,12 +935,12 @@ class TestResumeServiceExtraction:
         Experience
         Worked as a developer for several companies
         """
-        # Create mock doc with minimal structure
+        
         doc = MagicMock()
         doc.sents = []
         
         experience = ResumeService._extract_experience(doc, text)
-        # Should return empty or minimal results
+        
 
 
 class TestSkillServiceEdgeCases:
@@ -986,7 +986,7 @@ class TestSkillServiceEdgeCases:
         """Test retrieving skills by category."""
         technical_skills = SkillService.get_skills_by_category("technical")
         assert isinstance(technical_skills, list)
-        # Should return at least the skills we created marked as technical
+        
         assert len(technical_skills) > 0
 
     def test_create_skill_duplicate(self, db_session, skills):
@@ -1004,28 +1004,28 @@ class TestSkillServiceEdgeCases:
     def test_match_employees_with_optional_skills(self, app, db_session, manager_user, employee_with_skills, skills):
         """Test employee matching when project has optional (non-mandatory) skills."""
         with app.app_context():
-            # Create project with optional skills
+            
             project = ProjectService.create_project(manager_user.id, "OptionalProject", "Test")
             
-            # Add a skill as OPTIONAL
+            
             ProjectService.add_project_skill(project.id, skills[0].id, is_mandatory=False)
             
-            # Match employees
+            
             matches = SkillService.match_employees_to_project(project.id)
             
-            # Should still return employees even with optional skills
+            
             assert len(matches) >= 0
 
     def test_match_employees_no_project_skills(self, app, db_session, manager_user, employee_with_skills):
         """Test employee matching when project has no skill requirements."""
         with app.app_context():
-            # Create project with no skills
+            
             project = ProjectService.create_project(manager_user.id, "NoSkillsProject", "Test")
             
-            # Match employees when there are no project skills
+            
             matches = SkillService.match_employees_to_project(project.id)
             
-            # Should return empty list
+            
             assert matches == []
 
     def test_upload_resume_no_file(self, app, db_session, employee_user):
@@ -1066,7 +1066,7 @@ class TestSkillServiceEdgeCases:
             count = ResumeService.sync_parsed_skills_to_profile(
                 employee_user.id, skills_with_whitespace
             )
-            # Should skip empty and whitespace-only entries
+            
             assert count >= 0
 
     def test_get_user_resume_not_found(self, db_session, employee_user):
@@ -1083,7 +1083,7 @@ class TestSkillServiceEdgeCases:
         """Test parsing resume with no file path (or parsing when file missing)."""
         with app.app_context():
             from app.models import Resume
-            # Create a temp file that will be deleted
+            
             test_file = tmp_path / "test.pdf"
             test_file.write_bytes(b"%PDF-1.4\nTest resume")
             
@@ -1091,13 +1091,13 @@ class TestSkillServiceEdgeCases:
             db.session.add(resume)
             db.session.commit()
             
-            # Now delete the file to simulate file missing
+            
             test_file.unlink()
             
-            # Parse should handle missing file gracefully
+            
             result = ResumeService.parse_resume_skills(resume.id)
             
-            # Should return parse_error status when file is missing
+            
             assert result["status"] == "parse_error"
             assert result["extracted_skills"] == []
 
@@ -1112,7 +1112,7 @@ class TestResumeServiceParsing:
             temp_path = f.name
         
         try:
-            # Mock DocumentParser to return very short text
+            
             with patch('app.services.resume_service.DocumentParser.parse_file') as mock_parse:
                 mock_parse.return_value = "x"
                 result = ResumeService._parse_resume_content(temp_path)
@@ -1158,7 +1158,7 @@ class TestResumeServiceParsing:
         
         result = ResumeService._parse_without_spacy(text)
         
-        # Should find kubernetes via k8s synonym
+        
         extracted = result["extracted_skills"]
         assert len(extracted) > 0
 
@@ -1176,13 +1176,13 @@ class TestResumeServiceParsing:
             
             found_skills = ResumeService._extract_skills_from_doc(doc, text)
             
-            # Python should be found via direct match
+            
             assert "Python" in found_skills or len(found_skills) >= 0
 
     def test_extract_skills_from_doc_empty_text(self, app):
         """Test skill extraction from empty text."""
         with app.app_context():
-            # Create mock doc with empty entity list
+            
             doc = MagicMock()
             doc.ents = []
             
@@ -1193,11 +1193,11 @@ class TestResumeServiceParsing:
         """Test skill extraction when no skills match."""
         with app.app_context():
             text = "This is a document with no programming skills mentioned"
-            # Create mock doc with empty entity list
+            
             doc = MagicMock()
             doc.ents = []
             
             found_skills = ResumeService._extract_skills_from_doc(doc, text)
-            # May find nothing or some generic skills
+            
             assert isinstance(found_skills, list)
 

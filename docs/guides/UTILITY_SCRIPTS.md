@@ -1,28 +1,17 @@
-# Utility Scripts
+# HireSense Utility Scripts
 
-This document describes the utility scripts available in the `utility/` folder at the project root. These scripts help with development, testing, and maintenance tasks.
+This comprehensive guide documents all utility scripts available for development, testing, and maintenance tasks in HireSense.
 
 ---
 
 ## Table of Contents
 
-- [Utility Scripts](#utility-scripts)
-  - [Table of Contents](#table-of-contents)
-  - [Overview](#overview)
-  - [Available Commands](#available-commands)
-    - [seed-users](#seed-users)
-    - [seed-data](#seed-data)
-    - [seed-projects](#seed-projects)
-    - [clear-db](#clear-db)
-  - [Usage](#usage)
-    - [Docker Environment](#docker-environment)
-    - [Local Virtual Environment](#local-virtual-environment)
-  - [Adding New Utilities](#adding-new-utilities)
-  - [Troubleshooting](#troubleshooting)
-    - [Command Not Found](#command-not-found)
-    - [Database Connection Error](#database-connection-error)
-    - [Import Error](#import-error)
-  - [See Also](#see-also)
+- [Overview](#overview)
+- [Available Commands](#available-commands)
+- [Usage](#usage)
+- [Testing & Verification](#testing--verification)
+- [Adding New Utilities](#adding-new-utilities)
+- [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -113,6 +102,8 @@ User Summary:
 - Skill seeding reports verified totals and average skills per employee in the summary
 - The command uses your configured database from `.env` or environment variables
 
+---
+
 ### seed-data
 
 Seed the database with departments, skills, projects, and optionally user skills and assignments.
@@ -176,6 +167,8 @@ Seed data complete!
 - Sample projects receive random approved managers and matching skill requirements
 - `--full` adds additional user skill assignments (up to 20 employees) and project assignments for active projects
 
+---
+
 ### seed-projects
 
 Generate realistic projects with skill requirements and employee assignments.
@@ -213,6 +206,8 @@ flask seed-projects --help
 - Skills are sampled from the existing catalog and assignments respect employee availability
 - Command shows progress per project and concludes with counts by status, skills, and assignments
 
+---
+
 ### clear-db
 
 Safely clear all database tables while preserving the admin user.
@@ -248,6 +243,7 @@ flask clear-db --help
 
 - Running without `--confirm` simply describes the warning and how to rerun with confirmation
 - Intended for development/testing environments only—use with caution in shared databases
+
 ---
 
 ## Usage
@@ -286,48 +282,206 @@ flask seed-users
 
 ---
 
+## Testing & Verification
+
+### Quick Test
+
+To verify the seed-users command is working:
+
+```bash
+# Test with 5 users
+flask seed-users 5
+
+# Check output for:
+# - "Successfully added 5 fake users"
+# - User summary showing counts
+```
+
+### Comprehensive Testing
+
+#### 1. Test Default Behavior
+
+```bash
+flask seed-users
+```
+
+**Expected:**
+- Creates 30 users
+- All approved
+- Mixed roles (managers and employees)
+
+#### 2. Test Custom Quantity
+
+```bash
+flask seed-users 50
+```
+
+**Expected:**
+- Creates exactly 50 users
+
+#### 3. Test Pending Users
+
+```bash
+flask seed-users 20 --pending
+```
+
+**Expected:**
+- Creates 20 users with `is_approved=False`
+
+#### 4. Test Role Filters
+
+```bash
+# Managers only
+flask seed-users 15 --role=manager
+
+# Employees only
+flask seed-users 15 --role=employee
+
+# Mixed (default)
+flask seed-users 15 --role=mixed
+```
+
+**Expected:**
+- Creates users with specified roles
+
+#### 5. Test Combined Options
+
+```bash
+flask seed-users 10 --pending --role=manager
+```
+
+**Expected:**
+- Creates 10 pending manager accounts
+
+### Verification Script
+
+Run this Python script to verify users were added:
+
+```python
+from dotenv import load_dotenv
+load_dotenv()
+
+from app import create_app, db
+from app.models import User
+
+app = create_app()
+
+with app.app_context():
+    total = User.query.count()
+    approved = User.query.filter_by(is_approved=True).count()
+    pending = User.query.filter_by(is_approved=False).count()
+
+    print(f"Total users: {total}")
+    print(f"Approved: {approved}")
+    print(f"Pending: {pending}")
+
+    # Test password
+    user = User.query.filter(User.id > 5).first()
+    if user:
+        can_login = user.check_password("password123")
+        print(f"Password test: {'PASS' if can_login else 'FAIL'}")
+```
+
+### Expected Behavior
+
+#### Success Output
+
+```
+Seeding 30 users...
+Successfully added 30 fake users.
+
+User Summary:
+  - Total users in DB: 31
+  - Approved: 30
+  - Pending: 1
+  - Managers: 14
+  - Employees: 17
+```
+
+#### Duplicate Email Skipping
+
+```
+Seeding 10 users...
+Skipped 2 users (duplicate emails).
+Successfully added 8 fake users.
+```
+
+### Common Use Cases
+
+#### Development Setup
+```bash
+# Create diverse test data
+flask seed-users 50 --role=employee
+flask seed-users 20 --role=manager
+flask seed-users 30 --pending
+```
+
+#### Testing Pagination
+```bash
+# Create 100+ users to test pagination
+flask seed-users 100
+```
+
+#### Testing Approval Workflow
+```bash
+# Create pending users to test approval
+flask seed-users 25 --pending
+```
+
+### Integration with Admin Panel
+
+After seeding users, verify in admin panel:
+
+1. Navigate to `http://localhost:5010/admin/users`
+2. Check pagination works with many users
+3. Test filtering by role
+4. Verify search functionality
+5. Test bulk actions on seeded users
+
+---
+
 ## Adding New Utilities
 
 To add a new CLI command:
 
-1. **Create a new file** in `utility/`:
+### Step 1: Create a new file in `utility/`
 
-   ```python
-   # utility/my_command.py
-   import click
-   from flask.cli import with_appcontext
+```python
+# utility/my_command.py
+import click
+from flask.cli import with_appcontext
 
-   @click.command("my-command")
-   @click.argument("arg", default="value")
-   @with_appcontext
-   def my_command(arg):
-       """Description of what the command does."""
-       click.echo(f"Running with: {arg}")
-   ```
+@click.command("my-command")
+@click.argument("arg", default="value")
+@with_appcontext
+def my_command(arg):
+    """Description of what the command does."""
+    click.echo(f"Running with: {arg}")
+```
 
-2. **Export in `__init__.py`**:
+### Step 2: Export in `__init__.py`
 
-   ```python
-   # utility/__init__.py
-   from .seed_users import seed_users
-   from .my_command import my_command
+```python
+# utility/__init__.py
+from .seed_users import seed_users
+from .my_command import my_command
 
-   __all__ = ["seed_users", "my_command"]
-   ```
+__all__ = ["seed_users", "my_command"]
+```
 
-3. **Register in `app/__init__.py`**:
+### Step 3: Register in `app/__init__.py`
 
-   ```python
-   from utility.my_command import my_command
-   app.cli.add_command(my_command)
-   ```
+```python
+from utility.my_command import my_command
+app.cli.add_command(my_command)
+```
 
-4. **Test the command**:
+### Step 4: Test the command
 
-   ```bash
-   flask my-command --help
-   flask my-command
-   ```
+```bash
+flask my-command --help
+flask my-command
+```
 
 ---
 
@@ -363,10 +517,66 @@ export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 flask seed-users
 ```
 
+### Issue: "No module named 'faker'"
+
+**Solution:**
+```bash
+pip install faker
+```
+
+### Issue: Users not appearing in database
+
+**Solution:**
+Check database connection in `.env`:
+```bash
+DATABASE_URL=postgresql://user:pass@host:port/database
+```
+
+Verify with:
+```bash
+python -c "from app import create_app, db; from app.models import User; app = create_app(); app.app_context().push(); print(User.query.count())"
+```
+
+### Issue: Import errors
+
+**Solution:**
+Ensure project root is in Python path:
+```bash
+export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+```
+
+---
+
+## Notes
+
+- All seeded users have password: `password123`
+- Usernames and emails are generated using Faker library
+- Users are created as active (not blacklisted)
+- Duplicate emails are automatically skipped
+- Command respects `DATABASE_URL` from `.env` file
+
+---
+
+## Automated Testing
+
+The seed-users command is tested in:
+- Unit tests: `testing/unit/test_admin.py`
+- Integration tests: `testing/integration/test_integration.py`
+
+Run tests:
+```bash
+pytest testing/ -v
+```
+
 ---
 
 ## See Also
 
-- [README.md](../README.md) - Project overview and setup
-- [CONTRIBUTING.md](../CONTRIBUTING.md) - Contribution guidelines
+- [README.md](../../README.md) - Project overview and setup
+- [CONTRIBUTING.md](../../CONTRIBUTING.md) - Contribution guidelines
 - [TESTING.md](TESTING.md) - Testing documentation
+
+---
+
+**Last Updated:** March 29, 2026  
+**Status:** ✅ Production Ready

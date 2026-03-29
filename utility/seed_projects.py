@@ -42,26 +42,26 @@ def seed_projects(count: int):
 
     fake = Faker()
 
-    # Validation: Check count
+    
     if count <= 0:
         click.echo(click.style("❌ Error: Count must be positive", fg="red"))
         return
 
-    # Validation: Check if managers exist
+    
     managers = User.query.filter_by(role='manager', is_approved=True, is_active=True).all()
     if not managers:
         click.echo(click.style("❌ Error: No managers found in database.", fg="red"))
         click.echo("   Run 'flask seed-users --role manager' first.")
         return
 
-    # Validation: Check if skills exist
+    
     skills = Skill.query.all()
     if not skills:
         click.echo(click.style("❌ Error: No skills found in database.", fg="red"))
         click.echo("   Run 'flask seed-data' first.")
         return
 
-    # Validation: Check if employees exist
+    
     employees = User.query.filter_by(role='employee', is_approved=True, is_active=True).all()
     if not employees:
         click.echo(click.style("❌ Error: No employees found in database.", fg="red"))
@@ -71,7 +71,7 @@ def seed_projects(count: int):
     click.echo(f"\n{click.style('Seeding ' + str(count) + ' projects...', fg='cyan', bold=True)}")
     click.echo()
 
-    # Project title templates for variety
+    
     title_templates = [
         lambda: f"{fake.bs().title()} Platform",
         lambda: f"{fake.catch_phrase()} System",
@@ -80,7 +80,7 @@ def seed_projects(count: int):
         lambda: f"{fake.company()} {random.choice(['Integration', 'Migration', 'Upgrade', 'Redesign'])}",
     ]
 
-    # Role templates for assignments
+    
     role_templates = [
         "Lead Developer",
         "Senior Developer",
@@ -98,26 +98,26 @@ def seed_projects(count: int):
 
     for i in range(count):
         try:
-            # Generate project data
+            
             title = random.choice(title_templates)()
             description = fake.paragraph(nb_sentences=3)
 
-            # Weighted status distribution
+            
             status = random.choices(
                 ['active', 'planning', 'completed', 'on hold'],
                 weights=[60, 20, 15, 5],
                 k=1
             )[0]
 
-            # Generate realistic dates
+            
             start_date = fake.date_between(start_date='-6m', end_date='today')
             duration_days = random.randint(90, 365)
             end_date = start_date + timedelta(days=duration_days)
 
-            # Random manager
+            
             manager = random.choice(managers)
 
-            # Create project
+            
             project = Project(
                 title=title,
                 description=description,
@@ -127,22 +127,22 @@ def seed_projects(count: int):
                 end_date=end_date
             )
             db.session.add(project)
-            db.session.flush()  # Get project.id before adding related records
+            db.session.flush()  
 
-            # Add skill requirements (3-8 skills per project)
+            
             num_skills = random.randint(3, 8)
             selected_skills = random.sample(skills, min(num_skills, len(skills)))
 
             project_skills_count = 0
             for skill in selected_skills:
-                # Weighted proficiency (bell curve centered at 3)
+                
                 min_proficiency = random.choices(
                     [1, 2, 3, 4, 5],
                     weights=[10, 20, 40, 20, 10],
                     k=1
                 )[0]
 
-                # 70% mandatory, 30% optional
+                
                 is_mandatory = random.random() < 0.7
 
                 project_skill = ProjectSkill(
@@ -156,26 +156,26 @@ def seed_projects(count: int):
 
             total_skills += project_skills_count
 
-            # Add employee assignments (2-6 employees per project)
+            
             num_employees = random.randint(2, min(6, len(employees)))
             selected_employees = random.sample(employees, num_employees)
 
             project_assignments_count = 0
             for employee in selected_employees:
-                # Random role
+                
                 role_in_project = random.choice(role_templates)
 
-                # Status matches project status
+                
                 if status == 'active':
                     assignment_status = 'active'
                 elif status == 'completed':
                     assignment_status = 'completed'
                 elif status == 'on hold':
                     assignment_status = random.choice(['active', 'removed'])
-                else:  # planning
+                else:  
                     assignment_status = 'active'
 
-                # Allotted date between project start and today
+                
                 if start_date > date.today():
                     allotted_date = start_date
                 else:
@@ -199,7 +199,7 @@ def seed_projects(count: int):
             db.session.commit()
             projects_created += 1
 
-            # Show progress
+            
             click.echo(
                 f"  {click.style('✓', fg='green')} Created project: "
                 f"{click.style(title, fg='cyan')} "
@@ -211,7 +211,7 @@ def seed_projects(count: int):
             click.echo(click.style(f"  ✗ Error creating project {i+1}: {str(e)}", fg="red"))
             continue
 
-    # Summary statistics
+    
     click.echo()
     click.echo(click.style(f"✅ Successfully created {projects_created} projects!", fg="green", bold=True))
 

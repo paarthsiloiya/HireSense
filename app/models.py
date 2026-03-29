@@ -21,7 +21,7 @@ class Department(db.Model):
     name = db.Column(db.String(100), unique=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
-    # Relationships
+    
     users = db.relationship("User", back_populates="department", lazy="dynamic")
 
     def __repr__(self):
@@ -45,10 +45,10 @@ class Skill(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
-    category = db.Column(db.String(50))  # technical, soft, domain
+    category = db.Column(db.String(50))  
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
-    # Relationships
+    
     user_skills = db.relationship("UserSkill", back_populates="skill", lazy="dynamic", cascade="all, delete-orphan")
     project_skills = db.relationship("ProjectSkill", back_populates="skill", lazy="dynamic", cascade="all, delete-orphan")
 
@@ -95,11 +95,11 @@ class User(UserMixin, db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    # New fields for Manager/Employee features
+    
     department_id = db.Column(db.Integer, db.ForeignKey("departments.id"), nullable=True)
     job_title = db.Column(db.String(100), nullable=True)
 
-    # Relationships
+    
     department = db.relationship("Department", back_populates="users")
     notifications = db.relationship("Notification", backref="user", lazy="dynamic", cascade="all, delete-orphan")
     resume = db.relationship("Resume", back_populates="user", uselist=False, cascade="all, delete-orphan")
@@ -130,12 +130,26 @@ class User(UserMixin, db.Model):
 
 
 class Notification(db.Model):
+    """
+    User notifications for system events and alerts.
+    
+    Stores messages for users with read/unread status tracking.
+    Notifications can be of different types (success, error, info) to
+    provide appropriate visual feedback in the UI.
+    
+    :ivar id: Unique identifier for the notification.
+    :ivar user_id: Foreign key to the user who receives this notification.
+    :ivar message: Notification message text (max 255 characters).
+    :ivar type: Type of notification (success, error, info), defaults to 'info'.
+    :ivar is_read: Whether the notification has been read by the user.
+    :ivar created_at: Timestamp when notification was created.
+    """
     __tablename__ = "notifications"
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     message = db.Column(db.String(255), nullable=False)
-    type = db.Column(db.String(50), nullable=False, default="info")  # success, error, info
+    type = db.Column(db.String(50), nullable=False, default="info")  
     is_read = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
@@ -148,10 +162,10 @@ class Resume(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
     file_path = db.Column(db.String(255), nullable=False)
     original_filename = db.Column(db.String(255), nullable=True)
-    parsed_content = db.Column(db.Text, nullable=True)  # JSON string of parsed skills
+    parsed_content = db.Column(db.Text, nullable=True)  
     last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    # Relationship
+    
     user = db.relationship("User", back_populates="resume")
 
     def __repr__(self):
@@ -165,12 +179,12 @@ class LearningPath(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     target_role = db.Column(db.String(100), nullable=False)
-    generated_content = db.Column(db.Text, nullable=True)  # JSON with learning recommendations
-    status = db.Column(db.String(20), default="active", nullable=False)  # active, completed, archived
+    generated_content = db.Column(db.Text, nullable=True)  
+    status = db.Column(db.String(20), default="active", nullable=False)  
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    # Relationship
+    
     user = db.relationship("User", back_populates="learning_paths")
 
     def __repr__(self):
@@ -184,14 +198,14 @@ class Project(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, nullable=True)
-    status = db.Column(db.String(20), default="planning", nullable=False)  # planning, active, completed, on_hold
+    status = db.Column(db.String(20), default="planning", nullable=False)  
     manager_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     start_date = db.Column(db.Date, nullable=True)
     end_date = db.Column(db.Date, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    # Relationships
+    
     manager = db.relationship("User", back_populates="managed_projects", foreign_keys=[manager_id])
     required_skills = db.relationship("ProjectSkill", back_populates="project", lazy="dynamic", cascade="all, delete-orphan")
     assignments = db.relationship("ProjectAssignment", back_populates="project", lazy="dynamic", cascade="all, delete-orphan")
@@ -208,12 +222,12 @@ class ProjectSkill(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     skill_id = db.Column(db.Integer, db.ForeignKey("skills.id", ondelete="CASCADE"), nullable=False)
     is_mandatory = db.Column(db.Boolean, default=True, nullable=False)
-    minimum_proficiency = db.Column(db.Integer, default=1, nullable=False)  # 1-5 scale
+    minimum_proficiency = db.Column(db.Integer, default=1, nullable=False)  
 
-    # Unique constraint
+    
     __table_args__ = (db.UniqueConstraint("project_id", "skill_id", name="uq_project_skill"),)
 
-    # Relationships
+    
     project = db.relationship("Project", back_populates="required_skills")
     skill = db.relationship("Skill", back_populates="project_skills")
 
@@ -229,13 +243,13 @@ class ProjectAssignment(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     allotted_date = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    role_in_project = db.Column(db.String(100), nullable=True)  # developer, lead, analyst, etc.
-    status = db.Column(db.String(20), default="active", nullable=False)  # active, completed, removed
+    role_in_project = db.Column(db.String(100), nullable=True)  
+    status = db.Column(db.String(20), default="active", nullable=False)  
 
-    # Unique constraint - one assignment per user per project
+    
     __table_args__ = (db.UniqueConstraint("project_id", "user_id", name="uq_project_user"),)
 
-    # Relationships
+    
     project = db.relationship("Project", back_populates="assignments")
     user = db.relationship("User", back_populates="project_assignments")
 
@@ -250,17 +264,17 @@ class UserSkill(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     skill_id = db.Column(db.Integer, db.ForeignKey("skills.id", ondelete="CASCADE"), nullable=False)
-    proficiency_level = db.Column(db.Integer, default=1, nullable=False)  # 1-5 scale
-    is_verified = db.Column(db.Boolean, default=False, nullable=False)  # Manager-verified
+    proficiency_level = db.Column(db.Integer, default=1, nullable=False)  
+    is_verified = db.Column(db.Boolean, default=False, nullable=False)  
     acquired_date = db.Column(db.Date, nullable=True)
     last_used_date = db.Column(db.Date, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    # Unique constraint - one entry per user per skill
+    
     __table_args__ = (db.UniqueConstraint("user_id", "skill_id", name="uq_user_skill"),)
 
-    # Relationships
+    
     user = db.relationship("User", back_populates="user_skills")
     skill = db.relationship("Skill", back_populates="user_skills")
 

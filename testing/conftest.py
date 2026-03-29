@@ -14,12 +14,12 @@ from typing import Generator
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
 
-# Add project root to Python path
+
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-# Set test environment variables before importing app
+
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 os.environ["SECRET_KEY"] = "test-secret-key-do-not-use-in-production"
 os.environ["ADMIN_PASSWORD"] = "TestAdmin@123"
@@ -29,7 +29,7 @@ from app import create_app, db
 from app.models import User, Notification, Department, Skill, Project, ProjectSkill, ProjectAssignment, UserSkill, Resume, LearningPath
 
 
-# Enable foreign key constraints for SQLite
+
 @event.listens_for(Engine, "connect")
 def set_sqlite_pragma(dbapi_conn, connection_record):
     """Enable foreign key constraints for SQLite connections."""
@@ -94,7 +94,7 @@ def db_session(app: Flask) -> Generator:
         yield db.session
         db.session.rollback()
         db.session.remove()
-        # Clean up all tables
+        
         for table in reversed(db.metadata.sorted_tables):
             db.session.execute(table.delete())
         db.session.commit()
@@ -304,9 +304,9 @@ def sample_notification(db_session, admin_user: User) -> Notification:
     return notification
 
 
-# ============================================
-# NEW FIXTURES FOR MANAGER/EMPLOYEE FEATURES
-# ============================================
+
+
+
 
 @pytest.fixture(scope="function")
 def department(db_session) -> Department:
@@ -356,16 +356,16 @@ def project(db_session, manager_user: User) -> Project:
 @pytest.fixture(scope="function")
 def project_with_skills(db_session, project: Project, skills: list) -> Project:
     """Create a project with skill requirements."""
-    # Add Python as mandatory, JavaScript as optional
+    
     ps1 = ProjectSkill(
         project_id=project.id,
-        skill_id=skills[0].id,  # Python
+        skill_id=skills[0].id,  
         is_mandatory=True,
         minimum_proficiency=3,
     )
     ps2 = ProjectSkill(
         project_id=project.id,
-        skill_id=skills[1].id,  # JavaScript
+        skill_id=skills[1].id,  
         is_mandatory=False,
         minimum_proficiency=2,
     )
@@ -377,16 +377,16 @@ def project_with_skills(db_session, project: Project, skills: list) -> Project:
 @pytest.fixture(scope="function")
 def employee_with_skills(db_session, employee_user: User, skills: list) -> User:
     """Create an employee with skills."""
-    # Add Python (level 4) and SQL (level 3)
+    
     us1 = UserSkill(
         user_id=employee_user.id,
-        skill_id=skills[0].id,  # Python
+        skill_id=skills[0].id,  
         proficiency_level=4,
         is_verified=True,
     )
     us2 = UserSkill(
         user_id=employee_user.id,
-        skill_id=skills[2].id,  # SQL
+        skill_id=skills[2].id,  
         proficiency_level=3,
         is_verified=False,
     )

@@ -1,3 +1,11 @@
+"""
+HireSense Flask application factory and configuration.
+
+This module provides the create_app() factory function for initializing
+the Flask application with database, authentication, and blueprint registration.
+The factory pattern allows for flexible application instantiation with
+different configurations for development, testing, and production.
+"""
 import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
@@ -22,7 +30,7 @@ def create_app(port: int = 5010) -> Flask:
     """
     app = Flask(__name__)
 
-    # Import CLI command from utility package at project root
+    
     import sys
     import os
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

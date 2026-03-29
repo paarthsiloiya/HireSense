@@ -19,7 +19,7 @@ class TestLoginManager:
             db_session.commit()
             user_id = user.id
             
-        # Load user outside of current context
+        
         with app.app_context():
             loaded_user = load_user(str(user_id))
             assert loaded_user is not None

@@ -194,21 +194,21 @@ class ProjectService:
         project_id: int, user_id: int, role: str = None
     ) -> ProjectAssignment:
         """Assign an employee to a project."""
-        # Verify the user is an employee
+        
         user = db.session.get(User, user_id)
         if not user:
             raise ValueError("User not found")
         if user.role != "employee":
             raise ValueError("Only employees can be assigned to projects")
 
-        # Check for existing assignment
+        
         existing = ProjectAssignment.query.filter_by(
             project_id=project_id, user_id=user_id
         ).first()
 
         if existing:
             if existing.status == "removed":
-                # Reactivate the assignment
+                
                 existing.status = "active"
                 existing.allotted_date = datetime.utcnow()
                 existing.role_in_project = role

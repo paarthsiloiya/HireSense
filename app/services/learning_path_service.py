@@ -15,8 +15,8 @@ from app.services.skill_service import SkillService
 class LearningPathService:
     """Service class for learning path operations."""
 
-    # Predefined role templates with expected skills
-    # In production, this would be stored in the database
+    
+    
     ROLE_TEMPLATES = {
         "senior_developer": {
             "title": "Senior Developer",
@@ -79,10 +79,10 @@ class LearningPathService:
         user_skills = SkillService.get_user_skills(user_id)
         user_skill_names = {s["skill_name"].lower() for s in user_skills}
 
-        # Analyze skill gaps
+        
         recommendations = []
 
-        # Check required skills
+        
         for skill_name in role_template["required_skills"]:
             skill_lower = skill_name.lower()
             user_has_skill = any(
@@ -99,7 +99,7 @@ class LearningPathService:
                     "resources": LearningPathService._get_learning_resources(skill_name),
                 })
             else:
-                # Check if proficiency needs improvement
+                
                 user_skill = next(
                     s for s in user_skills if s["skill_name"].lower() == skill_lower
                 )
@@ -113,7 +113,7 @@ class LearningPathService:
                         "resources": LearningPathService._get_learning_resources(skill_name),
                     })
 
-        # Check recommended skills
+        
         for skill_name in role_template.get("recommended_skills", []):
             skill_lower = skill_name.lower()
             user_has_skill = any(
@@ -130,11 +130,11 @@ class LearningPathService:
                     "resources": LearningPathService._get_learning_resources(skill_name),
                 })
 
-        # Sort by priority
+        
         priority_order = {"high": 0, "medium": 1, "low": 2}
         recommendations.sort(key=lambda x: priority_order[x["priority"]])
 
-        # Calculate readiness score
+        
         required_count = len(role_template["required_skills"])
         met_count = sum(
             1 for skill in role_template["required_skills"]
@@ -152,7 +152,7 @@ class LearningPathService:
             "recommendations": recommendations,
         }
 
-        # Archive any existing active paths for the same target role
+        
         existing_paths = LearningPath.query.filter_by(
             user_id=user_id, target_role=target_role, status="active"
         ).all()
@@ -255,7 +255,7 @@ class LearningPathService:
         user_skills = SkillService.get_user_skills(user_id)
         user_skill_names = {s["skill_name"].lower() for s in user_skills}
 
-        # Analyze required skills
+        
         required_skills = role_template["required_skills"]
         met_required = []
         missing_required = []
@@ -272,7 +272,7 @@ class LearningPathService:
             else:
                 missing_required.append(skill)
 
-        # Analyze recommended skills
+        
         recommended_skills = role_template.get("recommended_skills", [])
         met_recommended = []
         missing_recommended = []
@@ -289,7 +289,7 @@ class LearningPathService:
             else:
                 missing_recommended.append(skill)
 
-        # Calculate readiness
+        
         required_count = len(required_skills)
         met_count = len(met_required)
         readiness_score = int((met_count / required_count * 100)) if required_count > 0 else 100
@@ -361,11 +361,11 @@ class LearningPathService:
         if path.status != "active":
             raise ValueError("Cannot modify a non-active learning path")
 
-        # Parse existing content
+        
         content = json.loads(path.generated_content) if path.generated_content else {}
         recommendations = content.get("recommendations", [])
 
-        # Find and update the skill
+        
         skill_found = False
         for rec in recommendations:
             if rec["skill_name"].lower() == skill_name.lower():
@@ -377,7 +377,7 @@ class LearningPathService:
         if not skill_found:
             raise ValueError(f"Skill '{skill_name}' not found in this learning path")
 
-        # Add skill to user's profile if not already present
+        
         skill = Skill.query.filter(
             db.func.lower(Skill.name) == skill_name.lower()
         ).first()
@@ -388,7 +388,7 @@ class LearningPathService:
             ).first()
 
             if existing_user_skill:
-                # Update proficiency to target level if current is less
+                
                 target_level = next(
                     (r["target_level"] for r in recommendations
                      if r["skill_name"].lower() == skill_name.lower()),
@@ -398,7 +398,7 @@ class LearningPathService:
                     existing_user_skill.proficiency_level = target_level
                     existing_user_skill.is_verified = False
             else:
-                # Add new skill with target proficiency level
+                
                 target_level = next(
                     (r["target_level"] for r in recommendations
                      if r["skill_name"].lower() == skill_name.lower()),
@@ -412,18 +412,18 @@ class LearningPathService:
                 )
                 db.session.add(new_user_skill)
 
-        # Calculate new progress
+        
         total_skills = len(recommendations)
         completed_skills = sum(1 for r in recommendations if r.get("completed", False))
         progress_percentage = int((completed_skills / total_skills * 100)) if total_skills > 0 else 0
 
-        # Update content with new progress
+        
         content["recommendations"] = recommendations
         content["progress_percentage"] = progress_percentage
         content["completed_skills_count"] = completed_skills
         content["total_skills_count"] = total_skills
 
-        # Auto-complete learning path if all skills are done
+        
         if progress_percentage == 100:
             path.status = "completed"
 
@@ -449,7 +449,7 @@ class LearningPathService:
         content = json.loads(path.generated_content)
         recommendations = content.get("recommendations", [])
 
-        # Check if progress is already calculated
+        
         if "progress_percentage" in content:
             return {
                 "percentage": content["progress_percentage"],
@@ -457,7 +457,7 @@ class LearningPathService:
                 "total": content.get("total_skills_count", len(recommendations)),
             }
 
-        # Calculate progress from recommendations
+        
         total_skills = len(recommendations)
         completed_skills = sum(1 for r in recommendations if r.get("completed", False))
         progress_percentage = int((completed_skills / total_skills * 100)) if total_skills > 0 else 0

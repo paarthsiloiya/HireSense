@@ -20,7 +20,7 @@ class TestNLPManagerSingleton:
 
     def test_initialization_only_once(self):
         """Test that __init__ is only called once per singleton."""
-        # The manager should already be initialized
+        
         assert nlp_manager._initialized is True
 
 
@@ -174,7 +174,7 @@ class TestSkillConceptMap:
     def test_system_design_concepts(self):
         """Test System Design has architecture concepts."""
         concept_map = nlp_manager.get_skill_concept_map()
-        # Check if it's under different key variations
+        
         design_skill = None
         for skill in concept_map:
             if "design" in skill.lower() and "system" in skill.lower():
@@ -239,7 +239,7 @@ class TestResolveToCanonical:
     def test_resolve_cicd(self):
         """Test resolving CI/CD variants."""
         result = nlp_manager.resolve_to_canonical("continuous integration")
-        # CI/CD is title-cased to "Ci/cd" when converted
+        
         assert result is not None and "ci" in result.lower() and "cd" in result.lower()
 
     def test_resolve_agile_variant(self):
@@ -276,7 +276,7 @@ class TestExtractSkillsSemanticallySafety:
     def test_extract_returns_dict_with_scores(self):
         """Test that semantic extraction returns dict with float scores."""
         try:
-            # Only test if sentence-transformers is available
+            
             nlp_manager.load_sentence_transformer()
             
             sentences = [
@@ -288,12 +288,12 @@ class TestExtractSkillsSemanticallySafety:
             result = nlp_manager.extract_skills_semantically(sentences, candidates)
             assert isinstance(result, dict)
             
-            # Check that all scores are floats
+            
             for skill, score in result.items():
                 assert isinstance(score, (int, float))
                 assert 0.0 <= score <= 1.0
         except (ImportError, Exception):
-            # Skip if sentence-transformers not available
+            
             pytest.skip("sentence-transformers not available")
 
     def test_extract_threshold_filtering(self):
@@ -304,17 +304,17 @@ class TestExtractSkillsSemanticallySafety:
             sentences = ["I know Python basics"]
             candidates = ["Python", "Docker"]
             
-            # With very high threshold, might get no results
+            
             high_threshold = nlp_manager.extract_skills_semantically(
                 sentences, candidates, threshold=0.95
             )
             
-            # With low threshold, might get more results
+            
             low_threshold = nlp_manager.extract_skills_semantically(
                 sentences, candidates, threshold=0.10
             )
             
-            # Low threshold result should have >= high threshold result
+            
             assert len(low_threshold) >= len(high_threshold)
         except (ImportError, Exception):
             pytest.skip("sentence-transformers not available")
@@ -328,7 +328,7 @@ class TestLoadSpacyModel:
         try:
             model1 = nlp_manager.load_spacy_model()
             model2 = nlp_manager.load_spacy_model()
-            # Should return the same cached instance
+            
             assert model1 is model2
         except RuntimeError:
             pytest.skip("spaCy model not available")
@@ -337,7 +337,7 @@ class TestLoadSpacyModel:
         """Test that loaded model has expected spaCy interface."""
         try:
             model = nlp_manager.load_spacy_model()
-            # spaCy Language objects can process text
+            
             doc = model("test text")
             assert doc is not None
             assert len(list(doc)) > 0
@@ -431,7 +431,7 @@ class TestResolveToCanonicalEdgeCases:
     def test_resolve_special_chars_in_skill(self):
         """Test resolution of skills with special characters."""
         result = nlp_manager.resolve_to_canonical("c++")
-        # May or may not be resolved depending on synonyms
+        
         assert result is None or "c" in result.lower()
 
     def test_resolve_empty_string(self):

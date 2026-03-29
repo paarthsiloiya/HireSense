@@ -42,7 +42,7 @@ from typing import Dict, List, Optional
 from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 
-# ── Internal app imports (relative to the app package) ─────────────────────
+
 from app import db
 from app.models import Resume, Skill, UserSkill
 from app.services.document_parser import DocumentParser
@@ -51,9 +51,9 @@ from app.services.nlp_manager import nlp_manager
 logger = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# Module-level compiled regex patterns
-# ---------------------------------------------------------------------------
+
+
+
 
 _EMAIL_RE = re.compile(
     r"\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b"
@@ -99,9 +99,9 @@ _EDUCATION_HEADERS: tuple = (
 )
 
 
-# ---------------------------------------------------------------------------
-# ResumeService
-# ---------------------------------------------------------------------------
+
+
+
 
 
 class ResumeService:
@@ -110,9 +110,9 @@ class ResumeService:
     ALLOWED_EXTENSIONS = {"pdf", "doc", "docx"}
     UPLOAD_FOLDER = "uploads/resumes"
 
-    # ------------------------------------------------------------------ #
-    # File-type helper                                                     #
-    # ------------------------------------------------------------------ #
+    
+    
+    
 
     @staticmethod
     def allowed_file(filename: str) -> bool:
@@ -122,9 +122,9 @@ class ResumeService:
             and filename.rsplit(".", 1)[1].lower() in ResumeService.ALLOWED_EXTENSIONS
         )
 
-    # ------------------------------------------------------------------ #
-    # CRUD operations                                                      #
-    # ------------------------------------------------------------------ #
+    
+    
+    
 
     @staticmethod
     def get_user_resume(user_id: int) -> Optional[Resume]:
@@ -157,8 +157,8 @@ class ResumeService:
         if not ResumeService.allowed_file(file.filename):
             raise ValueError("Invalid file type. Allowed: PDF, DOC, DOCX")
 
-        # Resolve upload directory relative to the Flask app root
-        from flask import current_app  # noqa: PLC0415 – deferred Flask import
+        
+        from flask import current_app  
 
         base_dir = (
             os.path.dirname(current_app.root_path)
@@ -175,17 +175,17 @@ class ResumeService:
 
         existing = Resume.query.filter_by(user_id=user_id).first()
         if existing:
-            # Remove the old physical file
+            
             if existing.file_path and os.path.exists(existing.file_path):
                 try:
                     os.remove(existing.file_path)
                 except OSError:
-                    pass  # Non-fatal – log if needed
+                    pass  
 
             file.save(filepath)
             existing.file_path = filepath
             existing.original_filename = original_filename
-            existing.parsed_content = None   # Invalidate stale parse
+            existing.parsed_content = None   
             existing.last_updated = datetime.utcnow()
             db.session.commit()
             return existing
@@ -221,9 +221,9 @@ class ResumeService:
         db.session.commit()
         return True
 
-    # ------------------------------------------------------------------ #
-    # NLP Parsing – public entry-point                                     #
-    # ------------------------------------------------------------------ #
+    
+    
+    
 
     @staticmethod
     def parse_resume_skills(resume_id: int) -> Dict:
@@ -262,9 +262,9 @@ class ResumeService:
         db.session.commit()
         return result
 
-    # ------------------------------------------------------------------ #
-    # NLP Parsing – internal pipeline                                      #
-    # ------------------------------------------------------------------ #
+    
+    
+    
 
     @staticmethod
     def _parse_resume_content(file_path: str) -> Dict:
@@ -291,7 +291,7 @@ class ResumeService:
         Returns:
             Parsed content dict (always valid, never raises).
         """
-        # ── 1. Extract raw text ─────────────────────────────────────────
+        
         try:
             raw_text = DocumentParser.parse_file(file_path)
             text = DocumentParser.clean_text(raw_text)
@@ -308,23 +308,23 @@ class ResumeService:
             )
             return ResumeService._empty_result("insufficient_text")
 
-        # ── 2. Load spaCy ───────────────────────────────────────────────
+        
         try:
             nlp = nlp_manager.load_spacy_model()
         except RuntimeError as exc:
             logger.error("spaCy unavailable – running degraded parse: %s", exc)
             return ResumeService._parse_without_spacy(text)
 
-        # ── 3. Run spaCy ────────────────────────────────────────────────
+        
         doc = nlp(text)
 
-        # Collect sentences once here — reused by both skill extraction
-        # (Strategy D) and experience extraction to avoid re-tokenising.
+        
+        
         sentences: List[str] = [
             sent.text.strip() for sent in doc.sents if sent.text.strip()
         ]
 
-        # ── 4–7. Extract structured fields ─────────────────────────────
+        
         return {
             "extracted_skills": ResumeService._extract_skills_from_doc(doc, text, sentences),
             "experience":        ResumeService._extract_experience(doc, text),
@@ -336,9 +336,9 @@ class ResumeService:
             "status":            "success",
         }
 
-    # ------------------------------------------------------------------ #
-    # Extraction helpers                                                   #
-    # ------------------------------------------------------------------ #
+    
+    
+    
 
     @staticmethod
     def _skill_pattern(term: str) -> str:
@@ -357,11 +357,11 @@ class ResumeService:
         "algorithm" or "google").
         """
         escaped = re.escape(term.lower())
-        # For short purely-alpha terms use strict word boundaries
+        
         if len(term) <= 3 and re.fullmatch(r"[a-zA-Z]+", term):
             return r"\b" + escaped + r"\b"
-        # For all other terms (including those with +, /, ., #, etc.)
-        # use a lookaround that ignores surrounding non-alpha characters.
+        
+        
         return r"(?<![a-zA-Z])" + escaped + r"(?![a-zA-Z])"
 
     @staticmethod
@@ -401,10 +401,10 @@ class ResumeService:
         found: set[str] = set()
         text_lower = text.lower()
 
-        # ── A: DB catalogue ─────────────────────────────────────────────
+        
         try:
             db_skills: List[Skill] = Skill.query.all()
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  
             logger.warning("Skill catalogue query failed: %s", exc)
             db_skills = []
 
@@ -415,14 +415,14 @@ class ResumeService:
             if re.search(pattern, text_lower, re.IGNORECASE):
                 found.add(skill.name)
 
-        # ── B: spaCy NER ─────────────────────────────────────────────────
+        
         for ent in doc.ents:
             if ent.label_ in {"ORG", "PRODUCT"} and len(ent.text.strip()) > 1:
                 db_name = db_lookup.get(ent.text.lower().strip())
                 if db_name:
                     found.add(db_name)
 
-        # ── C: Synonym / alias resolution ───────────────────────────────
+        
         synonyms = nlp_manager.get_skill_synonyms()
         for canonical, variants in synonyms.items():
             canonical_lower = canonical.lower()
@@ -433,13 +433,13 @@ class ResumeService:
                     found.add(db_name if db_name else canonical.title())
                     break
 
-        # ── D: Semantic / contextual inference ──────────────────────────
-        # Only runs when sentences are provided (full spaCy pipeline path)
-        # and sentence-transformers is installed.  Skips skills already
-        # found by A/B/C to avoid redundant embedding work.
+        
+        
+        
+        
         if sentences:
             concept_map = nlp_manager.get_skill_concept_map()
-            # Only test skills not already captured by literal strategies
+            
             already_found_lower = {s.lower() for s in found}
             candidates = [
                 skill for skill in concept_map
@@ -453,8 +453,8 @@ class ResumeService:
                     threshold=0.40,
                 )
                 for skill_name, score in inferred.items():
-                    # Prefer DB-canonical name if it exists, else use the
-                    # concept map key directly (it will be auto-created on sync)
+                    
+                    
                     db_name = db_lookup.get(skill_name.lower())
                     resolved = db_name if db_name else skill_name
                     found.add(resolved)
@@ -490,7 +490,7 @@ class ResumeService:
         seen: set[str] = set()
         lines = text.splitlines()
 
-        # Locate experience section
+        
         in_section = False
         section_lines: List[str] = []
         for line in lines:
@@ -523,7 +523,7 @@ class ResumeService:
 
             experiences.append({"period": period, "description": description})
 
-        # Supplement with spaCy sentence-level DATE + ORG pairs
+        
         for sent in doc.sents:
             dates = [e.text for e in sent.ents if e.label_ == "DATE"]
             orgs  = [e.text for e in sent.ents if e.label_ == "ORG"]
@@ -584,7 +584,7 @@ class ResumeService:
         if emails:
             contact["email"] = emails[0]
 
-        # spaCy phone entity (not all models support this label)
+        
         for ent in doc.ents:
             if ent.label_ in {"PHONE_NUMBER", "PHONE"}:
                 contact["phone"] = ent.text.strip()
@@ -598,9 +598,9 @@ class ResumeService:
 
         return contact
 
-    # ------------------------------------------------------------------ #
-    # Degraded-mode fallback (no spaCy)                                   #
-    # ------------------------------------------------------------------ #
+    
+    
+    
 
     @staticmethod
     def _parse_without_spacy(text: str) -> Dict:
@@ -616,11 +616,11 @@ class ResumeService:
         text_lower = text.lower()
         synonyms = nlp_manager.get_skill_synonyms()
 
-        # Build DB lookup even in degraded mode so canonical names resolve
+        
         try:
             db_skills_deg: List[Skill] = Skill.query.all()
             db_lookup = {s.name.lower(): s.name for s in db_skills_deg}
-        except Exception:  # noqa: BLE001
+        except Exception:  
             db_lookup = {}
 
         for canonical, variants in synonyms.items():
@@ -652,9 +652,9 @@ class ResumeService:
             "status":            "degraded_no_spacy",
         }
 
-    # ------------------------------------------------------------------ #
-    # Skill sync helper                                                    #
-    # ------------------------------------------------------------------ #
+    
+    
+    
 
     @staticmethod
     def sync_parsed_skills_to_profile(
@@ -687,29 +687,29 @@ class ResumeService:
             if not skill_name or not skill_name.strip():
                 continue
 
-            # ── 1. Find or create the Skill catalogue row ───────────────
+            
             skill = Skill.query.filter(
                 db.func.lower(Skill.name) == skill_name.lower()
             ).first()
 
             if not skill:
-                # Auto-create: assign a sensible category via the NLP manager
+                
                 category = nlp_manager.get_skill_category(skill_name)
                 skill = Skill(name=skill_name.strip(), category=category)
                 db.session.add(skill)
-                db.session.flush()   # Populate skill.id without a full commit
+                db.session.flush()   
                 logger.info(
                     "Auto-created Skill catalogue entry: '%s' (category=%s)",
                     skill_name, category,
                 )
 
-            # ── 2. Skip if user already has this skill ──────────────────
+            
             if UserSkill.query.filter_by(
                 user_id=user_id, skill_id=skill.id
             ).first():
                 continue
 
-            # ── 3. Create the UserSkill row ─────────────────────────────
+            
             db.session.add(
                 UserSkill(
                     user_id=user_id,
@@ -720,7 +720,7 @@ class ResumeService:
             )
             count += 1
 
-        # Single commit covers both new Skill rows and new UserSkill rows
+        
         db.session.commit()
         if count:
             logger.info(
@@ -728,9 +728,9 @@ class ResumeService:
             )
         return count
 
-    # ------------------------------------------------------------------ #
-    # Manager / admin read helpers                                         #
-    # ------------------------------------------------------------------ #
+    
+    
+    
 
     @staticmethod
     def get_recent_resume_updates(limit: int = 20) -> List[Dict]:
@@ -760,9 +760,9 @@ class ResumeService:
             for r in resumes
         ]
 
-    # ------------------------------------------------------------------ #
-    # Private utilities                                                    #
-    # ------------------------------------------------------------------ #
+    
+    
+    
 
     @staticmethod
     def _empty_result(status: str) -> Dict:

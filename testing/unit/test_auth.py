@@ -256,16 +256,16 @@ class TestAuthLogout:
 
     def test_logout_clears_session(self, client, admin_user):
         """Test that logout properly clears user session."""
-        # Login first
+        
         client.post("/auth/login", data={
             "email": "admin@hiresense.test",
             "password": "Admin@123",
         }, follow_redirects=True)
 
-        # Logout
+        
         client.get("/auth/logout", follow_redirects=True)
 
-        # Try to access protected resource
+        
         response = client.get("/admin/")
         assert response.status_code in [302, 401]
 

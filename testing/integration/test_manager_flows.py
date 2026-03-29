@@ -123,7 +123,7 @@ class TestManagerEmployeeMatching:
             follow_redirects=True,
         )
         assert response.status_code == 200
-        # Check employee was assigned
+        
         assert b"employee" in response.data.lower()
 
 
@@ -254,13 +254,13 @@ class TestManagerSkillManagement:
 
     def test_update_own_skill(self, authenticated_manager_client, manager_user, skills):
         """Test updating manager's own skill proficiency."""
-        # First add a skill
+        
         authenticated_manager_client.post(
             "/manager/skills/add",
             data={"skill_id": skills[0].id, "proficiency_level": 2},
         )
 
-        # Then update it
+        
         response = authenticated_manager_client.post(
             "/manager/skills/update",
             data={"skill_id": skills[0].id, "proficiency_level": 4},
@@ -271,13 +271,13 @@ class TestManagerSkillManagement:
 
     def test_remove_own_skill(self, authenticated_manager_client, manager_user, skills):
         """Test removing manager's own skill."""
-        # First add a skill
+        
         authenticated_manager_client.post(
             "/manager/skills/add",
             data={"skill_id": skills[0].id, "proficiency_level": 3},
         )
 
-        # Then remove it
+        
         response = authenticated_manager_client.post(
             "/manager/skills/remove",
             data={"skill_id": skills[0].id},
@@ -298,7 +298,7 @@ class TestManagerLearningPaths:
         assert response.status_code == 200
         assert learning_path.target_role.replace("_", " ").title().encode() in response.data
 
-    # Removed invalid test `test_complete_learning_path` for manager, as the complete endpoint only exists for employees.
+    
 
 
 class TestManagerEmployeeSkillVerification:
@@ -359,7 +359,7 @@ class TestManagerEdgeCases:
     def test_assign_employee_missing_user(self, authenticated_manager_client, project):
         response = authenticated_manager_client.post(
             f"/manager/projects/{project.id}/assign",
-            data={"role_in_project": "Dev"}, # user_id missing
+            data={"role_in_project": "Dev"}, 
             follow_redirects=True
         )
         assert b"Please select an employee" in response.data

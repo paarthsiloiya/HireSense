@@ -45,7 +45,7 @@ class TestEmployeeAssignments:
     def test_view_other_user_assignment(self, authenticated_employee_client, db_session, manager_user, project):
         """Test cannot view another user's assignment."""
         from app.models import ProjectAssignment, User
-        # Create another employee
+        
         other_employee = User(
             username="other",
             email="other@test.com",
@@ -57,7 +57,7 @@ class TestEmployeeAssignments:
         db_session.add(other_employee)
         db_session.commit()
 
-        # Create assignment for other employee
+        
         other_assignment = ProjectAssignment(
             project_id=project.id,
             user_id=other_employee.id,
@@ -65,7 +65,7 @@ class TestEmployeeAssignments:
         db_session.add(other_assignment)
         db_session.commit()
 
-        # Try to access other's assignment
+        
         response = authenticated_employee_client.get(
             f"/employee/assignments/{other_assignment.id}"
         )
@@ -86,7 +86,7 @@ class TestEmployeeSkills:
         response = authenticated_employee_client.post(
             "/employee/skills/add",
             data={
-                "skill_id": skills[3].id,  # Docker
+                "skill_id": skills[3].id,  
                 "proficiency_level": 2,
             },
             follow_redirects=True,
@@ -99,7 +99,7 @@ class TestEmployeeSkills:
         response = authenticated_employee_client.post(
             "/employee/skills/update",
             data={
-                "skill_id": skills[0].id,  # Python
+                "skill_id": skills[0].id,  
                 "proficiency_level": 5,
             },
             follow_redirects=True,
@@ -112,7 +112,7 @@ class TestEmployeeSkills:
         response = authenticated_employee_client.post(
             "/employee/skills/remove",
             data={
-                "skill_id": skills[0].id,  # Python
+                "skill_id": skills[0].id,  
             },
             follow_redirects=True,
         )
@@ -131,7 +131,7 @@ class TestEmployeeResume:
 
     def test_upload_resume(self, authenticated_employee_client):
         """Test uploading a resume."""
-        # Create a fake PDF file
+        
         data = {
             "resume_file": (io.BytesIO(b"fake pdf content"), "resume.pdf"),
         }
@@ -230,7 +230,7 @@ class TestEmployeeResumeOperations:
 
     def test_download_resume(self, authenticated_employee_client, tmp_path):
         """Test downloading resume."""
-        # First upload a resume
+        
         test_file = tmp_path / "test.pdf"
         test_file.write_bytes(b"%PDF-1.4\nTest content")
 
@@ -242,14 +242,14 @@ class TestEmployeeResumeOperations:
                 content_type="multipart/form-data",
             )
 
-        # Now try to download it
+        
         response = authenticated_employee_client.get("/employee/resume/download")
-        # Response might be 200 or 404 depending on storage setup
+        
         assert response.status_code in [200, 404, 302]
 
     def test_delete_resume(self, authenticated_employee_client, tmp_path):
         """Test deleting resume."""
-        # First upload a resume
+        
         test_file = tmp_path / "test.pdf"
         test_file.write_bytes(b"%PDF-1.4\nTest content")
 
@@ -261,7 +261,7 @@ class TestEmployeeResumeOperations:
                 content_type="multipart/form-data",
             )
 
-        # Now delete it
+        
         response = authenticated_employee_client.post(
             "/employee/resume/delete",
             follow_redirects=True,
@@ -318,10 +318,10 @@ class TestEmployeeAssignmentDetails:
 
     def test_view_other_user_assignment_forbidden(self, authenticated_employee_client, assignment, employee_user):
         """Test that employee cannot view other user's assignment."""
-        # This assignment belongs to employee_user from fixture
-        # Try to access it with a different employee
+        
+        
         response = authenticated_employee_client.get(f"/employee/assignments/{assignment.id}")
-        # Should either be allowed (if it's their own) or forbidden
+        
         assert response.status_code in [200, 403, 404]
 
 from unittest.mock import patch

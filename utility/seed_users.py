@@ -51,7 +51,7 @@ def seed_users(number: int, approved: bool, role: str):
         user_role = random.choice(roles)
         is_approved = approved if approved else random.choice([True, False])
 
-        # Check for existing email
+        
         if User.query.filter_by(email=email).first():
             skipped += 1
             continue
@@ -72,7 +72,7 @@ def seed_users(number: int, approved: bool, role: str):
         db.session.commit()
         click.echo(click.style(f"Successfully added {created} fake users.", fg="green"))
 
-        # Store created users for skills seeding
+        
         users = User.query.filter(User.email !=  "admin@hiresense.local").all()
 
     except Exception as e:
@@ -82,7 +82,7 @@ def seed_users(number: int, approved: bool, role: str):
     if skipped:
         click.echo(click.style(f"Skipped {skipped} users (duplicate emails).", fg="yellow"))
 
-    # Seed user skills for employees
+    
     if role in ["employee", "mixed"]:
         from app.models import Skill, UserSkill
 
@@ -97,7 +97,7 @@ def seed_users(number: int, approved: bool, role: str):
 
                 click.echo(click.style(f"✓ Successfully added {skills_count} user skills!", fg="green"))
 
-                # Skills statistics
+                
                 verified_count = UserSkill.query.filter_by(is_verified=True).count()
                 avg_skills = skills_count / len(employees) if employees else 0
 
@@ -111,7 +111,7 @@ def seed_users(number: int, approved: bool, role: str):
         else:
             click.echo(click.style("⚠️  No skills in database. Run 'flask seed-data' first.", fg="yellow"))
 
-    # Show summary
+    
     click.echo("\n" + click.style("User Summary:", fg="cyan", bold=True))
     click.echo(f"  - Total users in DB: {User.query.count()}")
     click.echo(f"  - Approved: {User.query.filter_by(is_approved=True).count()}")
@@ -135,24 +135,24 @@ def _seed_user_skills(employees, skills):
     user_skills_created = 0
 
     for employee in employees:
-        # 3-7 skills per employee
+        
         num_skills = random.randint(3, 7)
         selected_skills = random.sample(skills, min(num_skills, len(skills)))
 
         for skill in selected_skills:
-            # Weighted proficiency (bell curve)
+            
             proficiency = random.choices([1, 2, 3, 4, 5], weights=[10, 20, 40, 20, 10])[0]
 
-            # 30% chance of verified
+            
             is_verified = random.random() < 0.3
 
-            # acquired_date: within past 2 years
+            
             acquired_date = fake.date_between(
                 start_date=date.today() - timedelta(days=730),
                 end_date=date.today()
             )
 
-            # last_used_date: within past 6 months (after acquired_date)
+            
             last_used_date = fake.date_between(
                 start_date=max(acquired_date, date.today() - timedelta(days=180)),
                 end_date=date.today()
@@ -186,7 +186,7 @@ def seed_data(full: bool):
 
     click.echo("Seeding departments, skills, and projects...")
 
-    # Seed departments
+    
     departments_data = [
         "Engineering",
         "Quality Assurance",
@@ -210,7 +210,7 @@ def seed_data(full: bool):
     db.session.commit()
     click.echo(click.style(f"Departments: {Department.query.count()} total", fg="green"))
 
-    # Seed skills
+    
     skills_data = [
         ("Python", "technical"),
         ("JavaScript", "technical"),
@@ -267,7 +267,7 @@ def seed_data(full: bool):
     db.session.commit()
     click.echo(click.style(f"Skills: {Skill.query.count()} total", fg="green"))
 
-    # Assign departments to employees without departments
+    
     employees_without_dept = User.query.filter(
         User.role.in_(["employee", "manager"]),
         User.department_id.is_(None)
@@ -281,7 +281,7 @@ def seed_data(full: bool):
         db.session.commit()
         click.echo(f"Assigned departments to {len(employees_without_dept)} users")
 
-    # Create sample projects (if managers exist)
+    
     managers = User.query.filter_by(role="manager", is_approved=True, is_active=True).all()
     if managers:
         projects_data = [
@@ -304,9 +304,9 @@ def seed_data(full: bool):
                     manager_id=manager.id,
                 )
                 db.session.add(project)
-                db.session.flush()  # Get project ID
+                db.session.flush()  
 
-                # Add skill requirements
+                
                 for skill_name in req_skills:
                     if skill_name in skills:
                         ps = ProjectSkill(
@@ -322,13 +322,13 @@ def seed_data(full: bool):
         click.echo(click.style(f"Projects: {Project.query.count()} total", fg="green"))
 
     if full:
-        # Assign random skills to employees
+        
         employees = User.query.filter_by(role="employee", is_approved=True, is_active=True).all()
         skill_list = list(skills.values())
 
         import random
-        for employee in employees[:20]:  # Limit to first 20 for performance
-            # Give each employee 3-7 random skills
+        for employee in employees[:20]:  
+            
             num_skills = random.randint(3, 7)
             chosen_skills = random.sample(skill_list, min(num_skills, len(skill_list)))
 
@@ -346,13 +346,13 @@ def seed_data(full: bool):
         db.session.commit()
         click.echo(click.style(f"User skills: {UserSkill.query.count()} total", fg="green"))
 
-        # Create some project assignments
+        
         projects = Project.query.filter_by(status="active").all()
         employees = User.query.filter_by(role="employee", is_approved=True, is_active=True).all()
 
         if projects and employees:
             for project in projects:
-                # Assign 2-4 employees to each project
+                
                 num_assignments = min(random.randint(2, 4), len(employees))
                 chosen_employees = random.sample(employees, num_assignments)
 
@@ -374,9 +374,9 @@ def seed_data(full: bool):
 
     click.echo(click.style("\nSeed data complete!", fg="green"))
 
-# To seed data to a specific manager
-# Usage:
-# flask seed_manager_data 81
+
+
+
 @click.command("seed-manager-data")
 @click.argument("manager_id", type=int)
 @with_appcontext
@@ -392,7 +392,7 @@ def seed_manager_data(manager_id: int):
     
     fake = Faker()
     
-    # 1. Validate Manager
+    
     manager = db.session.get(User, manager_id)
     if not manager or manager.role != "manager":
         click.echo(click.style(f"Error: User with ID {manager_id} not found or is not a manager.", fg="red"))
@@ -400,7 +400,7 @@ def seed_manager_data(manager_id: int):
 
     click.echo(f"Seeding data for Manager: {click.style(manager.username, bold=True)}")
 
-    # 2. Ensure basic globals exist (Departments/Skills)
+    
     all_depts = Department.query.all()
     if not all_depts:
         click.echo("No departments found. Please run 'flask seed-data' first.")
@@ -411,12 +411,12 @@ def seed_manager_data(manager_id: int):
         click.echo("No skills found. Please run 'flask seed-data' first.")
         return
 
-    # 3. Update Manager Profile
+    
     manager.department_id = random.choice([d.id for d in all_depts])
     manager.job_title = "Senior Project Manager"
     manager.is_approved = True
     
-    # 4. Create Projects for this Manager
+    
     project_count = random.randint(2, 4)
     for _ in range(project_count):
         project = Project(
@@ -428,9 +428,9 @@ def seed_manager_data(manager_id: int):
             end_date=fake.date_between(start_date="today", end_date="+1y")
         )
         db.session.add(project)
-        db.session.flush() # Get ID for relationships
+        db.session.flush() 
 
-        # Add 3-5 random required skills to the project
+        
         sampled_skills = random.sample(all_skills, k=min(len(all_skills), random.randint(3, 5)))
         for s in sampled_skills:
             ps = ProjectSkill(
@@ -441,7 +441,7 @@ def seed_manager_data(manager_id: int):
             )
             db.session.add(ps)
 
-        # 5. Create and Assign Approved Employees to THIS Project
+        
         emp_count = random.randint(3, 5)
         for _ in range(emp_count):
             employee = User(
@@ -449,7 +449,7 @@ def seed_manager_data(manager_id: int):
                 email=fake.unique.email(),
                 role="employee",
                 is_active=True,
-                is_approved=True, # Required
+                is_approved=True, 
                 department_id=manager.department_id,
                 job_title=fake.job()
             )
@@ -457,7 +457,7 @@ def seed_manager_data(manager_id: int):
             db.session.add(employee)
             db.session.flush()
 
-            # Assign to project
+            
             assignment = ProjectAssignment(
                 project_id=project.id,
                 user_id=employee.id,
@@ -466,7 +466,7 @@ def seed_manager_data(manager_id: int):
             )
             db.session.add(assignment)
 
-            # Give employee random skills so the "Match" logic works later
+            
             for s in random.sample(all_skills, k=random.randint(2, 4)):
                 us = UserSkill(
                     user_id=employee.id,
