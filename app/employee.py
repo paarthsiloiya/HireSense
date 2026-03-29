@@ -7,13 +7,13 @@ Handles project assignments, skill management, resume uploads,
 and learning path features for employees.
 
 NLP integration points
-──────────────────────
-• upload_resume()  – after a successful upload the NLP pipeline is
+----------------------
+* upload_resume()  - after a successful upload the NLP pipeline is
   triggered automatically via ResumeService.parse_resume_skills().
   Extracted skills are immediately synced to the user's profile via
   ResumeService.sync_parsed_skills_to_profile().
 
-• view_resume()    – displays parsed skills from Resume.parsed_content
+* view_resume()    - displays parsed skills from Resume.parsed_content
   (if available) so the employee can review what was extracted.
 """
 
@@ -114,7 +114,7 @@ def list_assignments():
 @employee_bp.route("/assignments/<int:assignment_id>")
 @employee_required
 def view_assignment(assignment_id):
-    """Detail view for a single assignment – shows project skill comparison."""
+    """Detail view for a single assignment - shows project skill comparison."""
     assignment = ProjectService.get_assignment_by_id(assignment_id)
     if not assignment or assignment.user_id != current_user.id:
         abort(404)
@@ -197,10 +197,10 @@ def upload_resume():
     Upload or replace the employee's resume.
 
     On a successful upload the NLP pipeline is triggered automatically:
-      1. ResumeService.parse_resume_skills()        – runs full NLP parse.
-      2. ResumeService.sync_parsed_skills_to_profile() – adds new skills
+      1. ResumeService.parse_resume_skills()        - runs full NLP parse.
+      2. ResumeService.sync_parsed_skills_to_profile() - adds new skills
          found in the resume to the user's skill profile (proficiency=2,
-         unverified – a manager can verify later).
+         unverified - a manager can verify later).
 
     NLP errors are caught and logged; the upload itself is still marked
     as successful so a parsing failure never blocks the user.

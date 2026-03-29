@@ -7,15 +7,10 @@ Provides a single entry-point (DocumentParser.parse_file) that auto-detects
 the file format and delegates to the appropriate back-end.
 
 Supported formats
-─────────────────
-  .pdf   pdfplumber  (primary)  →  PyPDF2  (fallback)
-  .docx  python-docx  (paragraphs + table cells)
-  .doc   raises NotImplementedError with user-friendly guidance
-
-Import pattern (from any service):
-    from app.services.document_parser import DocumentParser
-
-    text = DocumentParser.parse_file("/path/to/resume.pdf")
+-----------------
+* .pdf   pdfplumber  (primary)  ->  PyPDF2  (fallback)
+* .docx  python-docx  (paragraphs + table cells)
+* .doc   raises NotImplementedError with user-friendly guidance
 """
 
 import logging
@@ -75,7 +70,7 @@ class DocumentParser:
         Extract text from a PDF.
 
         Tries pdfplumber first (better layout handling), then falls back to
-        PyPDF2.  Returns an empty string if both fail – never raises.
+        PyPDF2.  Returns an empty string if both fail - never raises.
 
         :param file_path: Path to the PDF file.
         :type file_path: str

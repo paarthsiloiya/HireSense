@@ -6,7 +6,7 @@ Resume Service - Business logic for resume management.
 Handles resume uploads, storage, and NLP-powered parsing.
 
 NLP Pipeline
-────────────
+------------
 1. DocumentParser  extracts raw text from the uploaded PDF / DOCX.
 2. spaCy (via NLPManager) tokenises the text and runs Named Entity
    Recognition (NER).
@@ -14,19 +14,19 @@ NLP Pipeline
       a. Direct substring match against the app's Skill catalogue (DB).
       b. spaCy NER labels (ORG, PRODUCT) aligned with known skills.
       c. Synonym / alias resolution via NLPManager.get_skill_synonyms().
-      d. Semantic / contextual inference via Sentence-Transformers —
+      d. Semantic / contextual inference via Sentence-Transformers -
          infers skills that are implied but never explicitly named, e.g.
-         "containerized deployment" → Docker.
+         "containerized deployment" -> Docker.
 4. Experience, education, and contact info are extracted with regex
    patterns supplemented by spaCy NER.
 5. Results are JSON-serialised into Resume.parsed_content.
 
 Integration
-───────────
+-----------
 Called from:
-  • app/employee.py  – upload_resume(), parse_resume_skills() on upload
-  • app/manager.py   – get_recent_resume_updates() on the updates dashboard
-  • app/admin.py     – (optional) audit / statistics hooks
+  * app/employee.py  - upload_resume(), parse_resume_skills() on upload
+  * app/manager.py   - get_recent_resume_updates() on the updates dashboard
+  * app/admin.py     - (optional) audit / statistics hooks
 
 Import pattern:
     from app.services.resume_service import ResumeService
@@ -231,8 +231,8 @@ class ResumeService:
         Run the full NLP pipeline on a stored resume and persist results.
 
         Called from:
-          • app/employee.py  after a successful upload
-          • Any background task / admin trigger
+          * app/employee.py  after a successful upload
+          * Any background task / admin trigger
 
         Workflow:
           1. Fetch Resume record from DB.
@@ -272,18 +272,18 @@ class ResumeService:
         Core NLP extraction pipeline.
 
         Stages:
-          1. DocumentParser   → raw text
-          2. DocumentParser.clean_text()  → normalised text
-          3. nlp_manager.load_spacy_model()  → spaCy Doc
-          4. _extract_skills_from_doc()   → skill list
-          5. _extract_experience()        → experience list
-          6. _extract_education()         → education list
-          7. _extract_contact_info()      → contact dict
+          1. DocumentParser   -> raw text
+          2. DocumentParser.clean_text()  -> normalised text
+          3. nlp_manager.load_spacy_model()  -> spaCy Doc
+          4. _extract_skills_from_doc()   -> skill list
+          5. _extract_experience()        -> experience list
+          6. _extract_education()         -> education list
+          7. _extract_contact_info()      -> contact dict
 
         Degrades gracefully:
-          - If the file cannot be read → returns empty result.
-          - If text is too short (image PDF) → returns empty result.
-          - If spaCy is unavailable → falls back to _parse_without_spacy().
+          - If the file cannot be read -> returns empty result.
+          - If text is too short (image PDF) -> returns empty result.
+          - If spaCy is unavailable -> falls back to _parse_without_spacy().
 
         Args:
             file_path: Absolute path to the resume file on disk.
@@ -312,7 +312,7 @@ class ResumeService:
         try:
             nlp = nlp_manager.load_spacy_model()
         except RuntimeError as exc:
-            logger.error("spaCy unavailable – running degraded parse: %s", exc)
+            logger.error("spaCy unavailable - running degraded parse: %s", exc)
             return ResumeService._parse_without_spacy(text)
 
         
@@ -369,28 +369,28 @@ class ResumeService:
         """
         Extract skills via four complementary strategies.
 
-        Strategy A – DB catalogue match
+        Strategy A - DB catalogue match
             Token-aware regex search for every Skill.name in the database.
             Handles punctuation-heavy names ("C++", "CI/CD", "Next.js").
 
-        Strategy B – spaCy NER
+        Strategy B - spaCy NER
             ORG and PRODUCT entities recognised by spaCy that also appear
             in the DB catalogue (case-insensitive) are promoted to skills.
 
-        Strategy C – Synonym / alias resolution
-            Maps known aliases ("k8s" → "Kubernetes", "reactjs" → "React")
+        Strategy C - Synonym / alias resolution
+            Maps known aliases ("k8s" -> "Kubernetes", "reactjs" -> "React")
             via NLPManager.get_skill_synonyms().
 
-        Strategy D – Semantic / contextual inference  ◀ NEW
+        Strategy D - Semantic / contextual inference  ◀ NEW
             Uses Sentence-Transformers to compare each resume sentence
             against natural-language concept descriptions for every skill
             in NLPManager.get_skill_concept_map().  This catches skills
             that are implied but never explicitly named, e.g.:
-              • "Designed microservices architecture using containerized
-                 deployment" → Docker, Kubernetes, System Design
-              • "Automated build and release pipelines" → CI/CD
-              • "Reviewed pull requests and mentored junior engineers"
-                → Code Review, Mentoring
+              * "Designed microservices architecture using containerized
+                 deployment" -> Docker, Kubernetes, System Design
+              * "Automated build and release pipelines" -> CI/CD
+              * "Reviewed pull requests and mentored junior engineers"
+                -> Code Review, Mentoring
             Inferred skills are tagged with their confidence score in the
             debug log and included in the result set at the same weight
             as explicitly matched skills.
@@ -738,8 +738,8 @@ class ResumeService:
         Return the most recently updated resumes across all employees.
 
         Used by:
-          • app/manager.py → view_updates()
-          • app/admin.py   → any audit dashboard
+          * app/manager.py -> view_updates()
+          * app/admin.py   -> any audit dashboard
 
         Returns:
             List of dicts: {user_id, username, original_filename, last_updated}.

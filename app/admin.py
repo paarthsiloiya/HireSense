@@ -4,12 +4,12 @@ app/admin.py
 Admin Blueprint - User management, approvals, and audit features.
 
 NLP integration points
-──────────────────────
-• nlp_stats()          – new route: aggregated NLP parse statistics across
+----------------------
+* nlp_stats()          - new route: aggregated NLP parse statistics across
   all resumes (total parsed, success/failure breakdown, skill extraction
   coverage).  Gives admins visibility into NLP health.
 
-• re_parse_all_resumes() – new route: bulk re-triggers the NLP pipeline
+* re_parse_all_resumes() - new route: bulk re-triggers the NLP pipeline
   on every resume in the system (e.g. after a model upgrade).
 
 All other admin routes are preserved exactly as before.
@@ -191,12 +191,12 @@ def nlp_stats():
     Aggregated NLP parsing statistics across all employee resumes.
 
     Metrics surfaced:
-      • Total resumes on file.
-      • Resumes with a successful NLP parse.
-      • Resumes with a failed / degraded parse.
-      • Resumes not yet parsed.
-      • Average number of skills extracted per successful parse.
-      • Per-status breakdown list for the table view.
+      * Total resumes on file.
+      * Resumes with a successful NLP parse.
+      * Resumes with a failed / degraded parse.
+      * Resumes not yet parsed.
+      * Average number of skills extracted per successful parse.
+      * Per-status breakdown list for the table view.
     """
     all_resumes = Resume.query.all()
 
@@ -211,7 +211,7 @@ def nlp_stats():
     for resume in all_resumes:
         row = {
             "user_id":           resume.user_id,
-            "username":          resume.user.username if resume.user else "—",
+            "username":          resume.user.username if resume.user else "-",
             "original_filename": resume.original_filename,
             "last_updated":      resume.last_updated,
             "nlp_status":        "not_parsed",
@@ -268,7 +268,7 @@ def reparse_all_resumes():
     """
     Bulk re-trigger the NLP pipeline on every resume in the system.
 
-    Runs synchronously – for large datasets consider moving this to a
+    Runs synchronously - for large datasets consider moving this to a
     Celery task.  Progress is tracked and summarised in a flash message.
     """
     all_resumes = Resume.query.all()
