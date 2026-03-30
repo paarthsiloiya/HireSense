@@ -273,12 +273,13 @@ def download_resume():
     if not resume or not resume.file_path:
         abort(404)
 
-    if not os.path.exists(resume.file_path):
+    local_path = ResumeService._get_local_file_path(resume)
+    if not local_path or not os.path.exists(local_path):
         flash("Resume file not found on server.", "danger")
         return redirect(url_for("employee.view_resume"))
 
     return send_file(
-        resume.file_path,
+        local_path,
         as_attachment=True,
         download_name=resume.original_filename or "resume",
     )

@@ -132,6 +132,49 @@ class ResumeService:
         return Resume.query.filter_by(user_id=user_id).first()
 
     @staticmethod
+    def _get_local_file_path(resume: Resume) -> Optional[str]:
+        """
+        Get a local path to the resume file, downloading from Supabase
+        if it's stored remotely.
+        """
+        import tempfile
+        
+        if not resume.file_path:
+            return None
+
+        supabase_url = os.environ.get("SUPABASE_URL")
+        supabase_key = os.environ.get("SUPABASE_KEY")
+
+        # 1. Existing local file
+        if os.path.exists(resume.file_path):
+            return resume.file_path
+
+        # 2. Supabase Cloud Storage
+        if supabase_url and supabase_key:
+            from supabase import create_client, Client
+            
+            # Since resume.file_path might just be the filename or an internal DB key,
+            # we use its basename to build a temp location.
+            filename = os.path.basename(resume.file_path)
+            temp_dir = tempfile.gettempdir()
+            temp_path = os.path.join(temp_dir, filename)
+
+            if os.path.exists(temp_path):
+                return temp_path
+
+            try:
+                supabase: Client = create_client(supabase_url, supabase_key)
+                response = supabase.storage.from_("resumes").download(resume.file_path)
+                with open(temp_path, "wb") as f:
+                    f.write(response)
+                return temp_path
+            except Exception as e:
+                logger.error(f"Error downloading {resume.file_path} from Supabase: {e}")
+                return None
+
+        return resume.file_path
+
+    @staticmethod
     def upload_resume(user_id: int, file: FileStorage) -> Resume:
         """
         Validate, save, and register an uploaded resume file.
@@ -157,43 +200,73 @@ class ResumeService:
         if not ResumeService.allowed_file(file.filename):
             raise ValueError("Invalid file type. Allowed: PDF, DOC, DOCX")
 
-                                                                 
         from flask import current_app  # noqa: PLC0415 – deferred Flask import
-
-        base_dir = (
-            os.path.dirname(current_app.root_path)
-            if current_app
-            else os.path.abspath(".")
-        )
-        upload_folder = os.path.join(base_dir, ResumeService.UPLOAD_FOLDER)
-        os.makedirs(upload_folder, exist_ok=True)
+        import tempfile
 
         original_filename = secure_filename(file.filename)
         timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
         filename = f"{user_id}_{timestamp}_{original_filename}"
-        filepath = os.path.join(upload_folder, filename)
+
+        supabase_url = os.environ.get("SUPABASE_URL")
+        supabase_key = os.environ.get("SUPABASE_KEY")
+
+        if supabase_url and supabase_key:
+            from supabase import create_client, Client
+            
+            temp_dir = tempfile.gettempdir()
+            filepath = os.path.join(temp_dir, filename)
+            file.save(filepath)
+            
+            # Read bytes to upload to Supabase (bucket should be created & can be private)
+            try:
+                supabase: Client = create_client(supabase_url, supabase_key)
+                with open(filepath, "rb") as f:
+                    # Upload to the 'resumes' bucket using just the filename as the path
+                    supabase.storage.from_("resumes").upload(filename, f.read())
+            except Exception as e:
+                logger.error(f"Failed to upload to Supabase: {e}")
+                raise ValueError("Could not save to Cloud Storage.")
+
+            db_filepath = filename  # Only store filename, not absolute path
+
+        else:
+            base_dir = (
+                os.path.dirname(current_app.root_path)
+                if current_app
+                else os.path.abspath(".")
+            )
+            upload_folder = os.path.join(base_dir, ResumeService.UPLOAD_FOLDER)
+            os.makedirs(upload_folder, exist_ok=True)
+            filepath = os.path.join(upload_folder, filename)
+            file.save(filepath)
+            db_filepath = filepath
 
         existing = Resume.query.filter_by(user_id=user_id).first()
         if existing:
-                                          
-            if existing.file_path and os.path.exists(existing.file_path):
-                try:
-                    os.remove(existing.file_path)
-                except OSError:
-                    pass                             
+            # Delete old file locally or from Supabase
+            if existing.file_path:
+                if supabase_url and supabase_key:
+                    try:
+                        supabase: Client = create_client(supabase_url, supabase_key)
+                        supabase.storage.from_("resumes").remove([existing.file_path])
+                    except Exception as e:
+                        logger.warning(f"Failed to delete old remote file: {e}")
+                elif os.path.exists(existing.file_path):
+                    try:
+                        os.remove(existing.file_path)
+                    except OSError:
+                        pass
 
-            file.save(filepath)
-            existing.file_path = filepath
+            existing.file_path = db_filepath
             existing.original_filename = original_filename
-            existing.parsed_content = None                           
+            existing.parsed_content = None
             existing.last_updated = datetime.utcnow()
             db.session.commit()
             return existing
 
-        file.save(filepath)
         resume = Resume(
             user_id=user_id,
-            file_path=filepath,
+            file_path=db_filepath,
             original_filename=original_filename,
         )
         db.session.add(resume)
@@ -203,7 +276,7 @@ class ResumeService:
     @staticmethod
     def delete_resume(user_id: int) -> bool:
         """
-        Delete a user's resume record and the associated file on disk.
+        Delete a user's resume record and the associated file on disk or Cloud Storage.
 
         Returns True if deleted, False if no resume existed.
         """
@@ -211,11 +284,23 @@ class ResumeService:
         if not resume:
             return False
 
-        if resume.file_path and os.path.exists(resume.file_path):
-            try:
-                os.remove(resume.file_path)
-            except OSError:
-                pass
+        if resume.file_path:
+            supabase_url = os.environ.get("SUPABASE_URL")
+            supabase_key = os.environ.get("SUPABASE_KEY")
+            
+            if supabase_url and supabase_key:
+                from supabase import create_client, Client
+                try:
+                    supabase: Client = create_client(supabase_url, supabase_key)
+                    # We store the basename as the path key on supabase
+                    supabase.storage.from_("resumes").remove([os.path.basename(resume.file_path)])
+                except Exception as e:
+                    logger.error(f"Error deleting {resume.file_path} from Supabase: {e}")
+            elif os.path.exists(resume.file_path):
+                try:
+                    os.remove(resume.file_path)
+                except OSError:
+                    pass
 
         db.session.delete(resume)
         db.session.commit()
@@ -257,7 +342,14 @@ class ResumeService:
             db.session.commit()
             return result
 
-        result = ResumeService._parse_resume_content(resume.file_path)
+        local_path = ResumeService._get_local_file_path(resume)
+        if not local_path:
+            result = ResumeService._empty_result("download_error")
+            resume.parsed_content = json.dumps(result)
+            db.session.commit()
+            return result
+
+        result = ResumeService._parse_resume_content(local_path)
         resume.parsed_content = json.dumps(result)
         db.session.commit()
         return result
