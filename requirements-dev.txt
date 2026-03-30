@@ -1,0 +1,5 @@
+# Documentation only (not needed for CI or production)
+sphinx>=7.0
+myst-parser>=2.0
+sphinx-autodoc-typehints>=2.0
+sphinx-rtd-theme>=2.0
