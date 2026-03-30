@@ -1,5 +1,3 @@
---extra-index-url https://download.pytorch.org/whl/cpu
-
 # ============================================================================
 # HireSense Requirements
 # ============================================================================
@@ -28,13 +26,7 @@ PyPDF2==3.0.1
 python-docx==1.2.0
 
 # NLP / Machine Learning
-numpy==2.4.3
-scikit-learn==1.8.0
-scipy==1.17.1
-sentence-transformers==5.3.0
 spacy==3.8.13
-torch==2.11.0
-transformers==5.4.0
 
 # spaCy models
 en_core_web_md @ https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.8.0/en_core_web_md-3.8.0-py3-none-any.whl
