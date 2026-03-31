@@ -221,8 +221,20 @@ class ResumeService:
             try:
                 supabase: Client = create_client(supabase_url, supabase_key)
                 with open(filepath, "rb") as f:
-                    # Upload to the 'resumes' bucket using just the filename as the path
-                    supabase.storage.from_("resumes").upload(filename, f.read())
+                    # Determine content type based on file extension
+                    ext = filename.rsplit(".", 1)[1].lower() if "." in filename else ""
+                    content_type = {
+                        "pdf": "application/pdf",
+                        "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        "doc": "application/msword",
+                    }.get(ext, "application/octet-stream")
+                    
+                    # Upload to the 'resumes' bucket with proper content-type header
+                    supabase.storage.from_("resumes").upload(
+                        filename,
+                        f.read(),
+                        file_options={"content-type": content_type}
+                    )
             except Exception as e:
                 logger.error(f"Failed to upload to Supabase: {e}")
                 raise ValueError("Could not save to Cloud Storage.")

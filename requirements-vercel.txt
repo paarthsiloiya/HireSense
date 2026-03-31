@@ -1,0 +1,36 @@
+# ============================================================================
+# HireSense Requirements - Vercel Deployment
+# ============================================================================
+# This file excludes spaCy and NLP models due to Vercel's module size limits.
+# Resume uploads still work; skill extraction runs in degraded regex-only mode.
+
+# Core Web Framework
+Flask==3.1.0
+Flask-Login==0.6.3
+Flask-Migrate==4.0.7
+Flask-SQLAlchemy==3.1.1
+Flask-WTF==1.2.2
+Werkzeug==3.1.3
+WTForms==3.2.1
+
+# Database / ORM
+alembic==1.18.4
+psycopg2-binary==2.9.10
+SQLAlchemy==2.0.48
+
+# Production Server
+gunicorn==23.0.0
+supabase==2.4.3
+
+# Document Processing
+pdfplumber==0.11.9
+PyPDF2==3.0.1
+python-docx==1.2.0
+
+# Environment and Configuration
+python-dotenv==1.0.1
+email_validator==2.2.0
+
+# NOTE: spaCy and en_core_web_md are excluded.
+# NLP features (automatic skill extraction) will run in degraded mode.
+# To enable full NLP, deploy to a platform with larger module limits.

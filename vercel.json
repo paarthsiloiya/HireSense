@@ -3,7 +3,10 @@
   "builds": [
     {
       "src": "run.py",
-      "use": "@vercel/python"
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "50mb"
+      }
     }
   ],
   "routes": [
@@ -11,5 +14,6 @@
       "src": "/(.*)",
       "dest": "run.py"
     }
-  ]
+  ],
+  "installCommand": "pip install -r requirements-vercel.txt"
 }

@@ -83,7 +83,14 @@ class NLPManager:
         if self._spacy_model is not None:
             return self._spacy_model
 
-        import spacy  # noqa: PLC0415 – deferred to avoid mandatory dep at import
+        # Handle case where spaCy is not installed (e.g., Vercel module limit)
+        try:
+            import spacy  # noqa: PLC0415 – deferred to avoid mandatory dep at import
+        except ImportError as exc:
+            logger.warning("spaCy not installed – NLP features disabled: %s", exc)
+            raise RuntimeError(
+                "spaCy is not installed. NLP features are unavailable."
+            ) from exc
 
         fallback_chain = [
             self.spacy_model_name,
@@ -101,6 +108,12 @@ class NLPManager:
                     "spaCy model '%s' not found – trying next in chain.", model_name
                 )
 
+        # Vercel and similar serverless environments don't allow runtime downloads
+        # Only attempt download if not in a restricted environment
+        if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+            raise RuntimeError(
+                "No spaCy model available. Models cannot be downloaded in serverless environments."
+            )
                                                  
         logger.warning("Attempting to download 'en_core_web_sm' …")
         os.system("python -m spacy download en_core_web_sm")  # noqa: S605
